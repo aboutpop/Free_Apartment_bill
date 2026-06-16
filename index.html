@@ -3,50 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการห้องเช่า - เข้าสู่ระบบ</title>
+    <title>ระบบเก็บข้อมูลและออกบิลห้องเช่า</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* CSS สำหรับหน้า Login */
-        body {
-            font-family: 'Sarabun', sans-serif; /* แนะนำให้ใช้ฟอนต์ภาษาไทยเช่น Sarabun หรือ Noto Sans Thai */
-            background-color: #3b5998; /* สีพื้นหลังตามภาพ ex.jpg */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        :root {
+            --primary-color: #2b579a;
+            --primary-hover: #1e3d6b;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #cccccc;
+            --success-color: #2ea44f;
+            --warning-color: #f39c12;
+            --danger-color: #d32f2f;
         }
 
-        .login-card {
-            background-color: white;
-            padding: 40px;
+        * { 
+            box-sizing: border-box; 
+            font-family: 'Sarabun', 'Helvetica Neue', Arial, sans-serif; 
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            margin: 0; 
+            padding: 20px; 
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ─── Login Overlay ─── */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(43, 87, 154, 0.95);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+
+        .login-box {
+            background: white;
+            padding: 35px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             text-align: center;
         }
 
-        .login-header h2 {
+        .login-box h2 {
             margin-top: 0;
             color: #2c3e50;
             font-size: 24px;
+            margin-bottom: 5px;
         }
 
-        .login-header p {
+        .login-box p {
             color: #666;
             font-size: 14px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .status-badge {
             display: inline-block;
-            background-color: #d4edda;
-            color: #155724;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
             margin-bottom: 20px;
         }
+
+        .status-success { background-color: #d4edda; color: #155724; }
+        .status-error { background-color: #f8d7da; color: #721c24; }
 
         .form-group {
             text-align: left;
@@ -55,22 +84,21 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             font-weight: bold;
-            color: #333;
             font-size: 14px;
         }
 
         .form-group input {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
-            box-sizing: border-box;
+            font-size: 15px;
         }
 
-        .btn-primary {
-            background-color: #3b5998;
+        .btn-login {
+            background-color: var(--primary-color);
             color: white;
             border: none;
             padding: 12px;
@@ -80,128 +108,767 @@
             font-weight: bold;
             cursor: pointer;
             margin-bottom: 20px;
-            transition: background-color 0.3s;
+            transition: background 0.2s;
         }
 
-        .btn-primary:hover {
-            background-color: #2d4373;
-        }
+        .btn-login:hover { background-color: var(--primary-hover); }
 
-        /* --- ส่วนที่เพิ่มใหม่ (2 ปุ่มด้านล่าง) --- */
-        .extra-actions-container {
-            display: flex;
-            justify-content: space-between;
+        /* ปุ่มเพิ่มเติมด้านล่างสำหรับผู้ใช้ใหม่ / คำนวณทั่วไป */
+        .extra-actions-grid {
+            display: grid;
+            grid-template-columns: 100%;
             gap: 15px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid #eeeeee;
             padding-top: 20px;
         }
 
-        .action-box {
-            flex: 1;
+        @media (min-width: 350px) {
+            .extra-actions-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .action-item {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        .btn-green, .btn-orange {
-            display: block;
-            width: 100%;
-            padding: 10px;
+        .btn-action-green {
+            background-color: var(--success-color);
             color: white;
             text-decoration: none;
+            padding: 10px;
+            width: 100%;
             border-radius: 4px;
             font-weight: bold;
-            box-sizing: border-box;
-            transition: opacity 0.3s;
+            font-size: 14px;
+            transition: opacity 0.2s;
         }
 
-        .btn-green:hover, .btn-orange:hover {
-            opacity: 0.8;
+        .btn-action-orange {
+            background-color: var(--warning-color);
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: opacity 0.2s;
         }
 
-        .btn-green {
-            background-color: #218838;
+        .btn-action-green:hover, .btn-action-orange:hover { opacity: 0.9; }
+
+        .action-subtext {
+            font-size: 11px;
+            color: #555555;
+            margin-top: 6px;
+            line-height: 1.3;
         }
 
-        .btn-orange {
-            background-color: #f39c12;
+        /* ─── Main Application Interface ─── */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        .action-desc {
-            font-size: 12px;
-            color: #555;
-            margin-top: 8px;
-            line-height: 1.4;
+        .user-info { font-size: 14px; color: #555; }
+        .btn-logout {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
         }
 
-        .action-link {
-            font-size: 12px;
-            color: #3b5998;
-            text-decoration: underline;
-            margin-top: 8px;
-            line-height: 1.4;
-            display: inline-block;
+        /* Tabs Navigation */
+        .tabs-nav {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
         }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .tab-content {
+            background: white;
+            padding: 25px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: none;
+        }
+
+        .tab-content.active { display: block; }
+
+        /* Grid Form Layout */
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Table Styling */
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th { background-color: #f8f9fa; font-weight: bold; }
+
+        /* Pagination */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-page {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Print Media CSS */
+        @media print {
+            body { background: white; padding: 0; }
+            .tabs-nav, .app-header, .grid-form, .btn-submit, #loginOverlay, .pagination-container, .no-print {
+                display: none !important;
+            }
+            .tab-content { box-shadow: none; padding: 0; display: block !important; }
+            .print-invoice-view { display: block !important; }
+        }
+
+        .print-invoice-view { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <div class="login-header">
+<div class="container">
+
+    <div id="loginOverlay">
+        <div class="login-box">
             <h2>🏠 ระบบจัดการห้องเช่า</h2>
-            <p>กรุณาเข้าสู่ระบบก่อนใช้งาน</p>
-            <!-- Badge นี้ควรใช้ Javascript เช็ค LocalStorage เพื่อแสดง/ซ่อน -->
-            <span class="status-badge" id="dbStatusBadge">✅ ตั้งค่าฐานข้อมูลแล้ว</span>
-        </div>
-
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="email">อีเมลผู้ใช้งาน (Email):</label>
-                <input type="email" id="email" placeholder="example@email.com" required>
-            </div>
-            <div class="form-group">
-                <label for="password">รหัสผ่าน (Password):</label>
-                <input type="password" id="password" placeholder="••••••••" required>
-            </div>
-            <button type="submit" class="btn-primary">🔓 เข้าสู่ระบบ</button>
-        </form>
-
-        <!-- ส่วนของปุ่มใหม่ 2 ปุ่ม -->
-        <div class="extra-actions-container">
-            <!-- ปุ่ม 1: ใช้งานทั่วไป -->
-            <div class="action-box">
-                <a href="calculator.html" class="btn-green">ใบเสร็จเปล่า</a>
-                <p class="action-desc">คิดบิลเท่านั้น ไม่เก็บข้อมูล</p>
-            </div>
+            <p>กรุณาลงชื่อเข้าใช้งานระบบหลังบ้าน</p>
             
-            <!-- ปุ่ม 2: ตั้งค่าใหม่ -->
-            <div class="action-box">
-                <a href="setup.html" class="btn-orange">ตั้งค่าใหม่</a>
-                <a href="setup.html" class="action-link">⚙️ ตั้งค่าฐานข้อมูล Supabase ของฉัน (สำหรับผู้ใช้ใหม่)</a>
+            <div id="dbStatus" class="status-badge status-error">❌ ยังไม่ได้ตั้งค่าฐานข้อมูล</div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">อีเมลผู้ใช้งาน (Email):</label>
+                    <input type="email" id="loginEmail" placeholder="example@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">รหัสผ่าน (Password):</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-login">🔓 เข้าสู่ระบบ</button>
+            </form>
+
+            <div class="extra-actions-grid">
+                <div class="action-item">
+                    <a href="calculator.html" class="btn-action-green">ใช้งานทั่วไป</a>
+                    <span class="action-subtext">ใบเสร็จเปล่าสำหรับคิดบิลเท่านั้น ไม่เก็บข้อมูล</span>
+                </div>
+                <div class="action-item">
+                    <a href="setup.html" class="btn-action-orange">ตั้งค่าใหม่</a>
+                    <span class="action-subtext">ตั้งค่าฐานข้อมูล Supabase ของฉัน (สำหรับผู้ใช้ใหม่)</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // ตัวอย่าง Javascript พื้นฐานสำหรับเช็คสถานะการตั้งค่าฐานข้อมูล
-        document.addEventListener('DOMContentLoaded', () => {
-            const dbStatusBadge = document.getElementById('dbStatusBadge');
-            
-            // เช็คว่าใน LocalStorage มีค่า Supabase URL/Key หรือไม่
-            const hasSupabaseConfig = localStorage.getItem('supabaseUrl') && localStorage.getItem('supabaseKey');
-            
-            if (hasSupabaseConfig) {
-                dbStatusBadge.style.display = 'inline-block';
-                dbStatusBadge.innerHTML = '✅ ตั้งค่าฐานข้อมูลแล้ว';
-                dbStatusBadge.style.backgroundColor = '#d4edda';
-                dbStatusBadge.style.color = '#155724';
-            } else {
-                dbStatusBadge.style.display = 'inline-block';
-                dbStatusBadge.innerHTML = '❌ ยังไม่ได้ตั้งค่าฐานข้อมูล';
-                dbStatusBadge.style.backgroundColor = '#f8d7da';
-                dbStatusBadge.style.color = '#721c24';
+    <div id="mainApp" style="display: none;">
+        <div class="app-header">
+            <div>
+                <h3 style="margin:0; color:var(--primary-color);">🏢 ระบบจัดการและจัดเก็บข้อมูลบิลหอพัก</h3>
+                <span id="displayUser" class="user-info">กำลังใช้งานโดย: -</span>
+            </div>
+            <button class="btn-logout" id="btnLogout">🔒 ออกจากระบบ</button>
+        </div>
+
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('invoiceTab')">📝 แท็บ 1: ออกบิล</button>
+            <button class="tab-btn" onclick="switchTab('historyTab')">📊 แท็บ 2: ประวัติข้อมูล</button>
+            <button class="tab-btn" onclick="switchTab('configTab')">⚙️ แท็บ 3: ตั้งค่า</button>
+        </div>
+
+        <div id="invoiceTab" class="tab-content active">
+            <h3>คำนวณและออกบิลประจำเดือน</h3>
+            <form id="invoiceForm">
+                <div class="grid-form">
+                    <div class="form-group">
+                        <label>หมายเลขห้อง:</label>
+                        <select id="invRoom" onchange="autoFetchLastMeter()" required>
+                            <option value="">-- เลือกห้อง --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>ประจำเดือน/ปี:</label>
+                        <input type="month" id="invMonth" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ค่าเช่าห้องปกติ (บาท):</label>
+                        <input type="number" id="invRent" value="3500" required>
+                    </div>
+                </div>
+
+                <div class="grid-form">
+                    <div class="form-group">
+                        <label>เลขมิเตอร์น้ำ (ครั้งก่อน):</label>
+                        <input type="number" id="waterBefore" value="0" readonly style="background:#e9ecef;">
+                    </div>
+                    <div class="form-group">
+                        <label>เลขมิเตอร์น้ำ (ปัจจุบัน):</label>
+                        <input type="number" id="waterAfter" value="0" oninput="calculateTotal()" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ค่าน้ำต่อหน่วย (บาท):</label>
+                        <input type="number" id="invWaterRate" value="18" oninput="calculateTotal()">
+                    </div>
+                </div>
+
+                <div class="grid-form">
+                    <div class="form-group">
+                        <label>เลขมิเตอร์ไฟ (ครั้งก่อน):</label>
+                        <input type="number" id="elecBefore" value="0" readonly style="background:#e9ecef;">
+                    </div>
+                    <div class="form-group">
+                        <label>เลขมิเตอร์ไฟ (ปัจจุบัน):</label>
+                        <input type="number" id="elecAfter" value="0" oninput="calculateTotal()" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ค่าไฟต่อหน่วย (บาท):</label>
+                        <input type="number" id="invElecRate" value="7" oninput="calculateTotal()">
+                    </div>
+                </div>
+
+                <div class="grid-form">
+                    <div class="form-group">
+                        <label>ค่าอินเทอร์เน็ต/อื่นๆ:</label>
+                        <input type="number" id="invInternet" value="0" oninput="calculateTotal()">
+                    </div>
+                    <div class="form-group">
+                        <label>ส่วนลด (บาท):</label>
+                        <input type="number" id="invDiscount" value="0" oninput="calculateTotal()">
+                    </div>
+                    <div class="form-group">
+                        <label style="color:blue;">ยอดรวมสุทธิทั้งสิ้น:</label>
+                        <input type="text" id="invGrandTotal" value="0.00" readonly style="font-weight:bold; color:blue; background:#e9ecef;">
+                    </div>
+                </div>
+
+                <button type="button" class="btn-submit" onclick="saveInvoiceData()">💾 บันทึกข้อมูลบิลลง Supabase</button>
+                <button type="button" class="btn-submit" style="background:#6c757d;" onclick="window.print()">🖨️ พิมพ์บิลฉบับนี้</button>
+            </form>
+        </div>
+
+        <div id="historyTab" class="tab-content">
+            <h3>ประวัติการบันทึกข้อมูลและคำนวณบิล</h3>
+            <div class="grid-form">
+                <div class="form-group">
+                    <label>กรองตามหมายเลขห้อง:</label>
+                    <select id="filterRoom" onchange="filterHistory()">
+                        <option value="">-- แสดงทั้งหมด --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>วันที่ทำรายการ</th>
+                            <th>ประจำเดือน</th>
+                            <th>ห้อง</th>
+                            <th>ค่าเช่า</th>
+                            <th>มิเตอร์น้ำ (เก่า ➔ ใหม่)</th>
+                            <th>หน่วยน้ำ</th>
+                            <th>รวมค่าน้ำ</th>
+                            <th>มิเตอร์ไฟ (เก่า ➔ ใหม่)</th>
+                            <th>หน่วยไฟ</th>
+                            <th>รวมค่าไฟ</th>
+                            <th>ค่าเน็ต/อื่น ๆ</th>
+                            <th>ส่วนลด</th>
+                            <th>ยอดสุทธิ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container" id="paginationControls">
+                <button class="btn-page" id="btnPrev" onclick="changePage(-1)">◀ ย้อนกลับ</button>
+                <span id="pageInfo">หน้า 1 / 1</span>
+                <button class="btn-page" id="btnNext" onclick="changePage(1)">ถัดไป ▶</button>
+            </div>
+        </div>
+
+        <div id="configTab" class="tab-content">
+            <h3>⚙️ ตั้งค่าระบบและตัวแปรฐานข้อมูล</h3>
+            <form id="configForm">
+                <div class="grid-form">
+                    <div class="form-group">
+                        <label>Supabase URL:</label>
+                        <input type="text" id="cfgUrl" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Supabase Anon Key:</label>
+                        <input type="password" id="cfgKey" required>
+                    </div>
+                </div>
+                <div class="grid-form">
+                    <div class="form-group">
+                        <label>จำนวนห้องพักทั้งหมดในหอ:</label>
+                        <input type="number" id="cfgRoomCount" value="20">
+                    </div>
+                    <div class="form-group">
+                        <label>ค่าเช่าห้องเริ่มต้น:</label>
+                        <input type="number" id="cfgRent" value="3500">
+                    </div>
+                </div>
+                <div class="grid-form">
+                    <div class="form-group">
+                        <label>ค่าน้ำเริ่มต้น/หน่วย:</label>
+                        <input type="number" id="cfgWater" value="18">
+                    </div>
+                    <div class="form-group">
+                        <label>ค่าไฟเริ่มต้น/หน่วย:</label>
+                        <input type="number" id="cfgElec" value="7">
+                    </div>
+                </div>
+                <div class="grid-form">
+                    <div class="form-group">
+                        <label>ข้อมูลเลขบัญชีธนาคารรับเงิน:</label>
+                        <input type="text" id="cfgBank" placeholder="กสิกรไทย x-xxx-xxxx-x">
+                    </div>
+                    <div class="form-group">
+                        <label>URL โลโก้หอพัก:</label>
+                        <input type="text" id="cfgLogo" placeholder="https://example.com/logo.png">
+                    </div>
+                    <div class="form-group">
+                        <label>URL คิวอาร์โค้ดรับเงิน:</label>
+                        <input type="text" id="cfgQr" placeholder="https://example.com/qr.png">
+                    </div>
+                </div>
+                <button type="button" class="btn-submit" style="background:var(--success-color);" onclick="saveSystemConfig()">💾 บันทึกการตั้งค่าลงเบราว์เซอร์</button>
+                <button type="button" class="btn-submit" style="background:var(--danger-color);" onclick="clearAllSystemData()">🚨 ล้างค่าทั้งหมด & Logout</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    let supabaseClient = null;
+    let historyRecords = [];
+    let filteredRecords = [];
+    let currentPage = 1;
+    const recordsPerPage = 10;
+
+    // สลับหน้าแท็บใช้งานในระบบหลังบ้าน
+    window.switchTab = function(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+
+        if (tabId === 'historyTab') {
+            fetchHistoryFromSupabase();
+        }
+    };
+
+    // โหลดและตรวจสอบ Config ซิมูเลชั่นตั้งแต่หน้าเว็บเริ่มทำงาน
+    document.addEventListener("DOMContentLoaded", function () {
+        initConfigurations();
+        checkSupabaseSetup();
+    });
+
+    function initConfigurations() {
+        const url = localStorage.getItem('supabaseUrl');
+        const key = localStorage.getItem('supabaseKey');
+        const badge = document.getElementById('dbStatus');
+
+        if (url && key) {
+            badge.innerText = "✅ ตั้งค่าฐานข้อมูลแล้ว";
+            badge.className = "status-badge status-success";
+            try {
+                supabaseClient = supabase.createClient(url, key);
+            } catch (err) {
+                console.error("Initialization error:", err);
             }
+        } else {
+            badge.innerText = "❌ ยังไม่ได้ตั้งค่าฐานข้อมูล";
+            badge.className = "status-badge status-error";
+        }
+
+        // โหลดข้อมูลลงฟอร์ม Config แท็บ 3
+        document.getElementById('cfgUrl').value = url || '';
+        document.getElementById('cfgKey').value = key || '';
+        document.getElementById('cfgRoomCount').value = localStorage.getItem('roomCount') || '20';
+        document.getElementById('cfgRent').value = localStorage.getItem('defaultRent') || '3500';
+        document.getElementById('cfgWater').value = localStorage.getItem('waterRate') || '18';
+        document.getElementById('cfgElec').value = localStorage.getItem('elecRate') || '7';
+        document.getElementById('cfgBank').value = localStorage.getItem('bankInfo') || '';
+        document.getElementById('cfgLogo').value = localStorage.getItem('logoUrl') || '';
+        document.getElementById('cfgQr').value = localStorage.getItem('qrCodeUrl') || '';
+
+        generateRoomOptions();
+    }
+
+    function generateRoomOptions() {
+        const count = parseInt(localStorage.getItem('roomCount')) || 20;
+        const invSelect = document.getElementById('invRoom');
+        const filterSelect = document.getElementById('filterRoom');
+        
+        invSelect.innerHTML = '<option value="">-- เลือกห้อง --</option>';
+        filterSelect.innerHTML = '<option value="">-- แสดงทั้งหมด --</option>';
+
+        for (let i = 1; i <= count; i++) {
+            const roomNo = 100 + i; // ตัวอย่างสร้างหมายเลขห้อง เช่น 101, 102
+            invSelect.innerHTML += `<option value="${roomNo}">ห้อง ${roomNo}</option>`;
+            filterSelect.innerHTML += `<option value="${roomNo}">ห้อง ${roomNo}</option>`;
+        }
+    }
+
+    async function checkSupabaseSetup() {
+        if (!supabaseClient) return;
+        // ตรวจสอบเช็ค Session เดิมของผู้ใช้ที่ค้างไว้
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            showMainApplication(session.user.email);
+        }
+    }
+
+    // ฟังก์ชันเข้าสู่ระบบ (Login)
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!supabaseClient) {
+            alert('กรุณาเข้าไปกดปุ่ม "ตั้งค่าใหม่" เพื่อตั้งค่าข้อมูล Supabase URL และ Key ก่อนเชื่อมต่อระบบฐานข้อมูลครับ');
+            return;
+        }
+
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            alert('ไม่สามารถเข้าสู่ระบบได้: ' + error.message);
+        } else {
+            showMainApplication(data.user.email);
+        }
+    });
+
+    function showMainApplication(email) {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('displayUser').innerText = `กำลังใช้งานโดย: ${email}`;
+        
+        // เซ็ตตัวแปรเริ่มต้นในหน้าออกบิลตามค่าคอนฟิก
+        document.getElementById('invRent').value = localStorage.getItem('defaultRent') || '3500';
+        document.getElementById('invWaterRate').value = localStorage.getItem('waterRate') || '18';
+        document.getElementById('invElecRate').value = localStorage.getItem('elecRate') || '7';
+        
+        const now = new Date();
+        document.getElementById('invMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    // ออกจากระบบ
+    document.getElementById('btnLogout').addEventListener('click', async function() {
+        if (supabaseClient) await supabaseClient.auth.signOut();
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+    });
+
+    // คิดคำนวณเงิน Real-time ในฟอร์มออกบิล
+    window.calculateTotal = function() {
+        const rent = parseFloat(document.getElementById('invRent').value) || 0;
+        
+        const wBefore = parseFloat(document.getElementById('waterBefore').value) || 0;
+        const wAfter = parseFloat(document.getElementById('waterAfter').value) || 0;
+        const wRate = parseFloat(document.getElementById('invWaterRate').value) || 0;
+        const wUnit = wAfter >= wBefore ? wAfter - wBefore : 0;
+        const wTotal = wUnit * wRate;
+
+        const eBefore = parseFloat(document.getElementById('elecBefore').value) || 0;
+        const eAfter = parseFloat(document.getElementById('elecAfter').value) || 0;
+        const eRate = parseFloat(document.getElementById('invElecRate').value) || 0;
+        const eUnit = eAfter >= eBefore ? eAfter - eBefore : 0;
+        const eTotal = eUnit * eRate;
+
+        const internet = parseFloat(document.getElementById('invInternet').value) || 0;
+        const discount = parseFloat(document.getElementById('invDiscount').value) || 0;
+
+        const grandTotal = (rent + wTotal + eTotal + internet) - discount;
+        document.getElementById('invGrandTotal').value = grandTotal.toFixed(2);
+    };
+
+    // [Auto Fetch] ระบบดึงเลขมิเตอร์น้ำไฟครั้งก่อนหน้าจากตาราง room_records อัตโนมัติ
+    window.autoFetchLastMeter = async function() {
+        const room = document.getElementById('invRoom').value;
+        if (!room || !supabaseClient) return;
+
+        // เรียกบิลรายการล่าสุดของห้องดังกล่าวจาก Supabase
+        const { data, error } = await supabaseClient
+            .from('room_records')
+            .select('water_after, elec_after')
+            .eq('room', room)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (error) {
+            console.error("Error auto fetching meter:", error);
+            return;
+        }
+
+        if (data && data.length > 0) {
+            document.getElementById('waterBefore').value = data[0].water_after || 0;
+            document.getElementById('elecBefore').value = data[0].elec_after || 0;
+        } else {
+            document.getElementById('waterBefore').value = 0;
+            document.getElementById('elecBefore').value = 0;
+        }
+        calculateTotal();
+    };
+
+    // บันทึกข้อมูลค่าน้ำค่าไฟเข้าตารางข้อมูลบนคลาวด์ Supabase
+    window.saveInvoiceData = async function() {
+        const room = document.getElementById('invRoom').value;
+        const month = document.getElementById('invMonth').value;
+        if (!room || !month) {
+            alert('กรุณาระบุหมายเลขห้องและรอบเดือนที่ต้องการออกบิลให้ครบถ้วน');
+            return;
+        }
+
+        if (!supabaseClient) return;
+
+        const rent = parseFloat(document.getElementById('invRent').value) || 0;
+        const wBefore = parseFloat(document.getElementById('waterBefore').value) || 0;
+        const wAfter = parseFloat(document.getElementById('waterAfter').value) || 0;
+        const wRate = parseFloat(document.getElementById('invWaterRate').value) || 0;
+        const wUnit = wAfter >= wBefore ? wAfter - wBefore : 0;
+        const wTotal = wUnit * wRate;
+
+        const eBefore = parseFloat(document.getElementById('elecBefore').value) || 0;
+        const eAfter = parseFloat(document.getElementById('elecAfter').value) || 0;
+        const eRate = parseFloat(document.getElementById('invElecRate').value) || 0;
+        const eUnit = eAfter >= eBefore ? eAfter - eBefore : 0;
+        const eTotal = eUnit * eRate;
+
+        const internet = parseFloat(document.getElementById('invInternet').value) || 0;
+        const discount = parseFloat(document.getElementById('invDiscount').value) || 0;
+        const grandTotal = parseFloat(document.getElementById('invGrandTotal').value) || 0;
+
+        // เช็คการทำรายการซ้ำในเดือนเดียวกันของห้องนั้น
+        const { data: checkData } = await supabaseClient
+            .from('room_records')
+            .select('id')
+            .eq('room', room)
+            .eq('month', month);
+
+        if (checkData && checkData.length > 0) {
+            if (!confirm('พบข้อมูลห้องนี้ในระบบของรอบเดือนนี้อยู่แล้ว คุณต้องการบันทึกข้อมูลทับเพิ่มเติมหรือไม่?')) {
+                return;
+            }
+        }
+
+        const payload = {
+            room: room,
+            month: month,
+            rent: rent,
+            water_after: wAfter,
+            water_unit: wUnit,
+            water_total: wTotal,
+            elec_after: eAfter,
+            elec_unit: eUnit,
+            elec_total: eTotal,
+            internet: internet,
+            discount: discount,
+            grand_total: grandTotal
+        };
+
+        const { error } = await supabaseClient.from('room_records').insert([payload]);
+
+        if (error) {
+            alert('ไม่สามารถบันทึกข้อมูลได้: ' + error.message);
+        } else {
+            alert('🎉 บันทึกประวัติข้อมูลบิลสำเร็จเรียบร้อยแล้ว!');
+            autoFetchLastMeter();
+        }
+    };
+
+    // ดึงประวัติข้อมูลค่าน้ำค่าไฟแสดงผลในแท็บประวัติข้อมูล
+    async function fetchHistoryFromSupabase() {
+        if (!supabaseClient) return;
+
+        const { data, error } = await supabaseClient
+            .from('room_records')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Error loading history:", error);
+            return;
+        }
+
+        historyRecords = data || [];
+        filterHistory();
+    }
+
+    window.filterHistory = function() {
+        const filterRoom = document.getElementById('filterRoom').value;
+        if (filterRoom) {
+            filteredRecords = historyRecords.filter(r => r.room == filterRoom);
+        } else {
+            filteredRecords = historyRecords;
+        }
+        currentPage = 1;
+        renderHistoryTable();
+    };
+
+    function renderHistoryTable() {
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = '';
+
+        if (filteredRecords.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:#888;">ไม่มีข้อมูลที่พบบันทึกในระบบ</td></tr>';
+            document.getElementById('paginationControls').style.display = 'none';
+            return;
+        }
+
+        const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+        const startIndex = (currentPage - 1) * recordsPerPage;
+        const endIndex = Math.min(startIndex + recordsPerPage, filteredRecords.length);
+
+        const pageItems = filteredRecords.slice(startIndex, endIndex);
+
+        pageItems.forEach(item => {
+            const tr = document.createElement('tr');
+            const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('th-TH') : '-';
+            
+            // คำนวณเลขมิเตอร์ครั้งก่อนจากข้อมูลผลต่างเพื่อนำกลับมาโชว์ในตารางย้อนหลัง
+            const wBefore = parseFloat(item.water_after || 0) - parseFloat(item.water_unit || 0);
+            const eBefore = parseFloat(item.elec_after || 0) - parseFloat(item.elec_unit || 0);
+
+            tr.innerHTML = `
+                <td>${dateStr}</td>
+                <td><b>${item.month || '-'}</b></td>
+                <td>${item.room}</td>
+                <td>${parseFloat(item.rent || 0).toLocaleString()}</td>
+                <td>${wBefore} ➔ <b>${item.water_after}</b></td>
+                <td>${item.water_unit}</td>
+                <td>${parseFloat(item.water_total || 0).toFixed(2)}</td>
+                <td>${eBefore} ➔ <b>${item.elec_after}</b></td>
+                <td>${item.elec_unit}</td>
+                <td>${parseFloat(item.elec_total || 0).toFixed(2)}</td>
+                <td>${parseFloat(item.internet || 0).toFixed(2)}</td>
+                <td style="color:red;">-${parseFloat(item.discount || 0).toFixed(2)}</td>
+                <td style="font-weight:bold;color:blue;">
+                    ${parseFloat(item.grand_total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </td>
+            `;
+            tbody.appendChild(tr);
         });
-    </script>
+
+        document.getElementById('paginationControls').style.display = 'flex';
+        document.getElementById('pageInfo').innerText = `หน้า ${currentPage} / ${totalPages}`;
+        document.getElementById('btnPrev').disabled = (currentPage === 1);
+        document.getElementById('btnNext').disabled = (currentPage === totalPages);
+    }
+
+    window.changePage = function(direction) {
+        currentPage += direction;
+        renderHistoryTable();
+    };
+
+    // บันทึกแก้ไขข้อมูลการตั้งค่าโครงสร้างระบบลงภายใน LocalStorage เบราว์เซอร์
+    window.saveSystemConfig = function() {
+        const url = document.getElementById('cfgUrl').value.trim();
+        const key = document.getElementById('cfgKey').value.trim();
+
+        if(!url || !key) {
+            alert('กรุณากรอก URL และ Anon Key ของ Supabase ให้เรียบร้อยเพื่อบันทึกตั้งค่าเชื่อมต่อ');
+            return;
+        }
+
+        localStorage.setItem('supabaseUrl', url);
+        localStorage.setItem('supabaseKey', key);
+        localStorage.setItem('roomCount', document.getElementById('cfgRoomCount').value);
+        localStorage.setItem('defaultRent', document.getElementById('cfgRent').value);
+        localStorage.setItem('waterRate', document.getElementById('cfgWater').value);
+        localStorage.setItem('elecRate', document.getElementById('cfgElec').value);
+        localStorage.setItem('bankInfo', document.getElementById('cfgBank').value);
+        localStorage.setItem('logoUrl', document.getElementById('cfgLogo').value);
+        localStorage.setItem('qrCodeUrl', document.getElementById('cfgQr').value);
+
+        alert('💾 บันทึกโครงสร้างการตั้งค่าลงเบราว์เซอร์สำเร็จแล้ว ระบบจะรีเฟรชเปิดใช้อีกครั้งครับ');
+        location.reload();
+    };
+
+    // ล้างค่าตัวแปรทั้งหมดออกจากหน่วยความจำเบราว์เซอร์เครื่องนี้
+    window.clearAllSystemData = function() {
+        if (confirm('🚨 คำเตือน: คุณต้องการล้างค่ากำหนดทั้งหมดในเครื่องนี้รวมถึงการออกจากระบบใช่หรือไม่? (ข้อมูลบนเซิร์ฟเวอร์จะไม่หาย)')) {
+            localStorage.clear();
+            alert('ล้างการตั้งค่าเสร็จสิ้น');
+            location.reload();
+        }
+    };
+
+})();
+</script>
 </body>
 </html>
