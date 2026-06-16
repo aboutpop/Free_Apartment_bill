@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการห้องเช่า - เข้าสู่ระบบ</title>
+    <style>
+        /* CSS สำหรับหน้า Login */
+        body {
+            font-family: 'Sarabun', sans-serif; /* แนะนำให้ใช้ฟอนต์ภาษาไทยเช่น Sarabun หรือ Noto Sans Thai */
+            background-color: #3b5998; /* สีพื้นหลังตามภาพ ex.jpg */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-card {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-header h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .btn-primary {
+            background-color: #3b5998;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #2d4373;
+        }
+
+        /* --- ส่วนที่เพิ่มใหม่ (2 ปุ่มด้านล่าง) --- */
+        .extra-actions-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .action-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-green, .btn-orange {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            box-sizing: border-box;
+            transition: opacity 0.3s;
+        }
+
+        .btn-green:hover, .btn-orange:hover {
+            opacity: 0.8;
+        }
+
+        .btn-green {
+            background-color: #218838;
+        }
+
+        .btn-orange {
+            background-color: #f39c12;
+        }
+
+        .action-desc {
+            font-size: 12px;
+            color: #555;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        .action-link {
+            font-size: 12px;
+            color: #3b5998;
+            text-decoration: underline;
+            margin-top: 8px;
+            line-height: 1.4;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-header">
+            <h2>🏠 ระบบจัดการห้องเช่า</h2>
+            <p>กรุณาเข้าสู่ระบบก่อนใช้งาน</p>
+            <!-- Badge นี้ควรใช้ Javascript เช็ค LocalStorage เพื่อแสดง/ซ่อน -->
+            <span class="status-badge" id="dbStatusBadge">✅ ตั้งค่าฐานข้อมูลแล้ว</span>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">อีเมลผู้ใช้งาน (Email):</label>
+                <input type="email" id="email" placeholder="example@email.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">รหัสผ่าน (Password):</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-primary">🔓 เข้าสู่ระบบ</button>
+        </form>
+
+        <!-- ส่วนของปุ่มใหม่ 2 ปุ่ม -->
+        <div class="extra-actions-container">
+            <!-- ปุ่ม 1: ใช้งานทั่วไป -->
+            <div class="action-box">
+                <a href="calculator.html" class="btn-green">ใบเสร็จเปล่า</a>
+                <p class="action-desc">คิดบิลเท่านั้น ไม่เก็บข้อมูล</p>
+            </div>
+            
+            <!-- ปุ่ม 2: ตั้งค่าใหม่ -->
+            <div class="action-box">
+                <a href="setup.html" class="btn-orange">ตั้งค่าใหม่</a>
+                <a href="setup.html" class="action-link">⚙️ ตั้งค่าฐานข้อมูล Supabase ของฉัน (สำหรับผู้ใช้ใหม่)</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ตัวอย่าง Javascript พื้นฐานสำหรับเช็คสถานะการตั้งค่าฐานข้อมูล
+        document.addEventListener('DOMContentLoaded', () => {
+            const dbStatusBadge = document.getElementById('dbStatusBadge');
+            
+            // เช็คว่าใน LocalStorage มีค่า Supabase URL/Key หรือไม่
+            const hasSupabaseConfig = localStorage.getItem('supabaseUrl') && localStorage.getItem('supabaseKey');
+            
+            if (hasSupabaseConfig) {
+                dbStatusBadge.style.display = 'inline-block';
+                dbStatusBadge.innerHTML = '✅ ตั้งค่าฐานข้อมูลแล้ว';
+                dbStatusBadge.style.backgroundColor = '#d4edda';
+                dbStatusBadge.style.color = '#155724';
+            } else {
+                dbStatusBadge.style.display = 'inline-block';
+                dbStatusBadge.innerHTML = '❌ ยังไม่ได้ตั้งค่าฐานข้อมูล';
+                dbStatusBadge.style.backgroundColor = '#f8d7da';
+                dbStatusBadge.style.color = '#721c24';
+            }
+        });
+    </script>
+</body>
+</html>

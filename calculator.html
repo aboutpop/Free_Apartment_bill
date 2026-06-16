@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบออกบิลห้องพัก</title>
+    <style>
+        :root {
+            --primary-color: #2b579a;
+            --primary-hover: #1e3d6b;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #cccccc;
+            --success-color: #2ea44f;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Sarabun', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header-area h2 {
+            margin: 0;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-link {
+            color: var(--primary-color);
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .lang-toggle-btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .lang-toggle-btn:hover {
+            background: #eef2f8;
+        }
+
+        .tab-content-like {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .invoice-box {
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            background: #fff;
+            position: relative;
+        }
+
+        .invoice-header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .invoice-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            color: #000;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .meta-item label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 8px 10px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        td.left {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        input[type="number"], input[type="text"], input[type="date"] {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        input:focus {
+            outline: 2px solid var(--primary-color);
+        }
+
+        .total-row {
+            background-color: #eaeff7;
+            font-weight: bold;
+        }
+
+        .grand-total {
+            font-size: 22px;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .invoice-footer {
+            margin-top: 15px;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+
+        .account-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .account-row label {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .account-row input {
+            max-width: 240px;
+            text-align: left;
+        }
+
+        .signature-area {
+            margin-top: 10px;
+            text-align: center;
+            float: right;
+            width: 300px;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        .btn-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        input[type="date"]::before {
+            content: attr(data-placeholder);
+            width: 100%;
+        }
+
+        input[type="date"]:focus::before,
+        input[type="date"]:valid::before {
+            display: none;
+        }
+
+        @media print {
+            @page {
+                size: landscape;
+                margin: 10mm;
+            }
+            body {
+                background: white;
+                padding: 0;
+                color: #000;
+            }
+            .container {
+                max-width: 100%;
+            }
+            .header-area, .btn-group {
+                display: none !important;
+            }
+            input[type="date"], .print-borderless {
+                border: none;
+                background: transparent;
+                appearance: none;
+                -webkit-appearance: none;
+            }
+            .tab-content-like {
+                box-shadow: none;
+                padding: 0;
+            }
+            .invoice-box {
+                border: none;
+                padding: 0;
+                width: 100%;
+            }
+            th, td {
+                padding: 6px 8px;
+                font-size: 14px;
+            }
+            .grand-total {
+                font-size: 20px;
+            }
+            .signature-area {
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header-area">
+        <h2 data-i18n="heading">🏠 ระบบออกบิลห้องพัก (ไม่ต้องเข้าสู่ระบบ)</h2>
+        <div class="header-right">
+            <a href="index.html" class="back-link" data-i18n="backLink">← กลับหน้าหลัก</a>
+            <button class="lang-toggle-btn" id="langToggleBtn" onclick="toggleLanguage()">EN</button>
+        </div>
+    </div>
+
+    <div class="tab-content-like">
+        <div class="invoice-box" id="printArea">
+            <div class="invoice-header">
+                <div class="invoice-title" data-i18n="receiptTitle">ใบเสร็จค่าเช่าห้องพัก</div>
+                <div class="meta-grid">
+                    <div class="meta-item">
+                        <label data-i18n="labelRoomName">ชื่อห้องพัก / เลขห้อง:</label>
+                        <input type="text" id="roomName" class="print-borderless" value="ห้องพัก">
+                    </div>
+                    <div class="meta-item">
+                        <label data-i18n="labelDate">วันที่ออกใบเสร็จ:</label>
+                        <input type="date" id="billingDate" onchange="updateDateDisplay(this)">
+                    </div>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:25%;" data-i18n="thItem">รายการ</th>
+                        <th style="width:15%;" data-i18n="thPrev">เลขครั้งก่อน</th>
+                        <th style="width:15%;" data-i18n="thCurr">เลขครั้งนี้</th>
+                        <th style="width:15%;" data-i18n="thUnit">จำนวนหน่วยที่ใช้</th>
+                        <th style="width:15%;" data-i18n="thRate">ราคาต่อหน่วย</th>
+                        <th style="width:15%;" data-i18n="thTotal">รวมเงิน (บาท)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="left" data-i18n="rowRent">ค่าเช่าห้อง</td>
+                        <td>-</td><td>-</td><td>-</td><td>-</td>
+                        <td><input type="number" id="rentAmount" value="2500" oninput="calculateInvoice()"></td>
+                    </tr>
+                    <tr>
+                        <td class="left" data-i18n="rowWater">ค่าน้ำ</td>
+                        <td><input type="number" id="waterBefore" value="0" oninput="calculateInvoice()"></td>
+                        <td><input type="number" id="waterAfter"  value="0" oninput="calculateInvoice()"></td>
+                        <td><span id="waterUnit">0</span></td>
+                        <td><input type="number" id="waterRate"   value="30" oninput="calculateInvoice()"></td>
+                        <td><span id="waterTotal">0</span></td>
+                    </tr>
+                    <tr>
+                        <td class="left" data-i18n="rowElec">ค่าไฟ</td>
+                        <td><input type="number" id="elecBefore" value="0" oninput="calculateInvoice()"></td>
+                        <td><input type="number" id="elecAfter"  value="0" oninput="calculateInvoice()"></td>
+                        <td><span id="elecUnit">0</span></td>
+                        <td><input type="number" id="elecRate"   value="6"  oninput="calculateInvoice()"></td>
+                        <td><span id="elecTotal">0</span></td>
+                    </tr>
+                    <tr>
+                        <td class="left" data-i18n="rowInternet">อินเทอร์เน็ต / อื่นๆ</td>
+                        <td>-</td><td>-</td><td>-</td><td>-</td>
+                        <td><input type="number" id="internetAmount" value="0" oninput="calculateInvoice()"></td>
+                    </tr>
+                    <tr>
+                        <td class="left" style="color:#c62828;" data-i18n="rowDiscount">ส่วนลด</td>
+                        <td>-</td><td>-</td><td>-</td><td>-</td>
+                        <td><input type="number" id="discountAmount" value="0" oninput="calculateInvoice()" style="color:#c62828;"></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="5" style="text-align:right;" data-i18n="grandTotalLabel">รวมยอดเงินที่ต้องชำระทั้งสิ้น:</td>
+                        <td><span id="grandTotal" class="grand-total">2500.00</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="invoice-footer">
+                <div class="account-row">
+                    <label data-i18n="accountLabel">เลขที่บัญชี / พร้อมเพย์สำหรับโอนเงิน:</label>
+                    <input type="text" id="accountNo" class="print-borderless" value="0000000">
+                </div>
+                <div class="signature-area">
+                    <p data-i18n="signatureLabel">ลายเซ็นต์: ___________________________________</p>
+                    <p style="margin-top:5px;" data-i18n="recipientLabel">( ผู้รับเงิน )</p>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="window.print()" data-i18n="printBtn">🖨️ พิมพ์ / บันทึกเป็นไฟล์ PDF</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const translations = {
+        th: {
+            pageTitle: "ระบบออกบิลห้องพัก",
+            heading: "🏠 ระบบออกบิลห้องพัก (ไม่ต้องเข้าสู่ระบบ)",
+            backLink: "← กลับหน้าหลัก",
+            langSwitch: "EN",
+            labelRoomName: "ชื่อห้องพัก / เลขห้อง:",
+            labelDate: "วันที่ออกใบเสร็จ:",
+            receiptTitle: "ใบเสร็จค่าเช่าห้องพัก",
+            thItem: "รายการ",
+            thPrev: "เลขครั้งก่อน",
+            thCurr: "เลขครั้งนี้",
+            thUnit: "จำนวนหน่วยที่ใช้",
+            thRate: "ราคาต่อหน่วย",
+            thTotal: "รวมเงิน (บาท)",
+            rowRent: "ค่าเช่าห้อง",
+            rowWater: "ค่าน้ำ",
+            rowElec: "ค่าไฟ",
+            rowInternet: "อินเทอร์เน็ต / อื่นๆ",
+            rowDiscount: "ส่วนลด",
+            grandTotalLabel: "รวมยอดเงินที่ต้องชำระทั้งสิ้น:",
+            accountLabel: "เลขที่บัญชี / พร้อมเพย์สำหรับโอนเงิน:",
+            signatureLabel: "ลายเซ็นต์: ___________________________________",
+            recipientLabel: "( ผู้รับเงิน )",
+            printBtn: "🖨️ พิมพ์ / บันทึกเป็นไฟล์ PDF",
+            datePlaceholder: "วว/ดด/ปปปป"
+        },
+        en: {
+            pageTitle: "Room Rental Receipt System",
+            heading: "🏠 Room Rental Receipt System (No Login Required)",
+            backLink: "← Back to Main System",
+            langSwitch: "ไทย",
+            labelRoomName: "Property / Room Name:",
+            labelDate: "Receipt Date:",
+            receiptTitle: "Room Rental Receipt",
+            thItem: "Item",
+            thPrev: "Previous Reading",
+            thCurr: "Current Reading",
+            thUnit: "Units Used",
+            thRate: "Rate per Unit",
+            thTotal: "Amount (THB)",
+            rowRent: "Rent",
+            rowWater: "Water",
+            rowElec: "Electricity",
+            rowInternet: "Internet / Others",
+            rowDiscount: "Discount",
+            grandTotalLabel: "Total Amount Due:",
+            accountLabel: "Account No. / PromptPay for Transfer:",
+            signatureLabel: "Signature: ___________________________________",
+            recipientLabel: "( Recipient )",
+            printBtn: "🖨️ Print / Save as PDF",
+            datePlaceholder: "dd/mm/yyyy"
+        }
+    };
+
+    function applyLanguage(lang) {
+        document.documentElement.lang = lang;
+        document.title = translations[lang].pageTitle;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (translations[lang][key] !== undefined) {
+                el.innerText = translations[lang][key];
+            }
+        });
+        document.getElementById('langToggleBtn').innerText = translations[lang].langSwitch;
+        updateDateDisplay(document.getElementById('billingDate'), lang);
+    }
+
+    function toggleLanguage() {
+        const current = document.documentElement.lang === 'en' ? 'en' : 'th';
+        const next = current === 'th' ? 'en' : 'th';
+        localStorage.setItem('siteLang', next);
+        applyLanguage(next);
+    }
+
+    function updateDateDisplay(input, lang) {
+        const currentLang = lang || (document.documentElement.lang === 'en' ? 'en' : 'th');
+        if (input.value) {
+            const [y, m, d] = input.value.split('-');
+            input.setAttribute('data-placeholder', `${d}/${m}/${y}`);
+        } else {
+            input.setAttribute('data-placeholder', translations[currentLang].datePlaceholder);
+        }
+    }
+
+    function calculateInvoice() {
+        const rent     = parseFloat(document.getElementById('rentAmount').value)     || 0;
+        const internet = parseFloat(document.getElementById('internetAmount').value) || 0;
+        const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+
+        const wBefore = parseFloat(document.getElementById('waterBefore').value) || 0;
+        const wAfter  = parseFloat(document.getElementById('waterAfter').value)  || 0;
+        const wRate   = parseFloat(document.getElementById('waterRate').value)   || 0;
+        const wUnit   = wAfter >= wBefore ? wAfter - wBefore : 0;
+        const wTotal  = wUnit * wRate;
+        document.getElementById('waterUnit').innerText  = wUnit;
+        document.getElementById('waterTotal').innerText = wTotal.toFixed(2);
+
+        const eBefore = parseFloat(document.getElementById('elecBefore').value) || 0;
+        const eAfter  = parseFloat(document.getElementById('elecAfter').value)  || 0;
+        const eRate   = parseFloat(document.getElementById('elecRate').value)   || 0;
+        const eUnit   = eAfter >= eBefore ? eAfter - eBefore : 0;
+        const eTotal  = eUnit * eRate;
+        document.getElementById('elecUnit').innerText  = eUnit;
+        document.getElementById('elecTotal').innerText = eTotal.toFixed(2);
+
+        document.getElementById('grandTotal').innerText =
+            (rent + wTotal + eTotal + internet - discount).toFixed(2);
+    }
+
+    window.onload = function () {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const dateInput = document.getElementById('billingDate');
+        dateInput.value = `${yyyy}-${mm}-${dd}`;
+
+        const savedLang = localStorage.getItem('siteLang') || 'th';
+        applyLanguage(savedLang);
+
+        calculateInvoice();
+    };
+</script>
+</body>
+</html>
