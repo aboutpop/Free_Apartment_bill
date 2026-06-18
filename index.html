@@ -6,19 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบเก็บข้อมูลและออกบิลห้องเช่า</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared-style.css">
+    <script src="billing-calc.js"></script>
     <style>
-        :root {
-            --primary-color: #2b579a;
-            --primary-hover: #1e3d6b;
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-            --border-color: #cccccc;
-            --success-color: #2ea44f;
-        }
-        * { box-sizing: border-box; font-family: 'Sarabun', 'Helvetica Neue', Arial, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
-
+        /* เหลือเฉพาะสไตล์ที่ใช้เฉพาะหน้านี้ ส่วนที่ใช้ร่วมกับ calculator.html
+           (สี, ตาราง, ปุ่ม, กล่องใบเสร็จ ฯลฯ) ย้ายไปอยู่ใน shared-style.css แล้ว */
         /* ─── Login Overlay ─── */
         #loginOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -71,8 +63,8 @@
         .settings-success { font-size: 14px; font-weight: bold; color: var(--success-color); margin-top: 10px; min-height: 20px; }
 
         /* ─── Main Layout ─── */
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .container { max-width: 1200px; }
+        .header-area { margin-bottom: 10px; }
         .logout-btn { background: #d32f2f; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid var(--primary-color); }
         .tab-btn {
@@ -82,17 +74,11 @@
             margin-right: 4px; transition: all 0.3s;
         }
         .tab-btn.active { background: var(--primary-color); color: white; }
-        .tab-content { display: none; background: var(--card-bg); padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         /* ─── Invoice ─── */
-        .invoice-box { border: 1px solid var(--border-color); padding: 25px; background: #fff; position: relative; }
-        .invoice-header {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 15px;
-        }
-        .invoice-title { font-size: 28px; font-weight: bold; margin: 0 0 10px 0; color: #000; }
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .meta-item { font-size: 16px; }
         .meta-item label { font-weight: bold; }
         .image-right-section { display: flex; gap: 20px; align-items: flex-start; }
@@ -109,31 +95,7 @@
             font-size: 12px; color: #999; border: 1px dashed #ccc;
         }
         .qr-text { font-size: 12px; font-weight: bold; color: #1a237e; margin-top: 5px; }
-        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        th, td { border: 1px solid #333; padding: 8px 10px; text-align: center; font-size: 15px; }
-        th { background-color: #f2f2f2; font-weight: bold; }
-        td.left { text-align: left; font-weight: bold; }
-        input[type="number"], input[type="text"], input[type="email"], input[type="password"], input[type="date"], select {
-            width: 100%; padding: 6px; border: 1px solid #bbb;
-            border-radius: 4px; text-align: center; font-size: 15px;
-        }
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type="number"] { -moz-appearance: textfield; }
-        input:focus, select:focus { outline: 2px solid var(--primary-color); }
-        .total-row { background-color: #eaeff7; font-weight: bold; }
-        .grand-total { font-size: 22px; color: #d32f2f; font-weight: bold; }
-        .invoice-footer { margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
-        .signature-area { margin-top: 10px; text-align: center; float: right; width: 300px; }
-        .clear { clear: both; }
-        .btn-group { margin-top: 20px; display: flex; gap: 10px; }
-        .btn {
-            padding: 12px 24px; font-size: 16px; font-weight: bold;
-            border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s;
-        }
         .btn:disabled { background-color: #ccc; color: #666; cursor: not-allowed; }
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
         .btn-success { background-color: var(--success-color); color: white; }
         .btn-success:hover:not(:disabled) { background-color: #2c974b; }
 
@@ -178,16 +140,9 @@
         .guest-desc { font-size: 13px; color: #666; margin-top: 12px; line-height: 1.7; }
 
         @media print {
-            @page { size: landscape; margin: 10mm; }
-            body { background: white; padding: 0; color: #000; }
-            .container { max-width: 100%; }
             .header-area, .tabs, .btn-group, .filter-section, .config-group, h3,
             p:not(#bankInfoShow) { display: none !important; }
             select, input[type="date"] { border: none; background: transparent; appearance: none; -webkit-appearance: none; }
-            .tab-content { box-shadow: none; padding: 0; }
-            .invoice-box { border: none; padding: 0; width: 100%; }
-            th, td { padding: 6px 8px; font-size: 14px; }
-            .grand-total { font-size: 20px; }
             .logo-placeholder, .qr-placeholder { border: none !important; }
         }
     </style>
@@ -856,30 +811,8 @@
     };
 
     // ─── Invoice Calculation ──────────────────────────────────────────
-    window.calculateInvoice = function () {
-        const rent     = parseFloat(document.getElementById('rentAmount').value)     || 0;
-        const internet = parseFloat(document.getElementById('internetAmount').value) || 0;
-        const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
-
-        const wBefore = parseFloat(document.getElementById('waterBefore').value) || 0;
-        const wAfter  = parseFloat(document.getElementById('waterAfter').value)  || 0;
-        const wRate   = parseFloat(document.getElementById('waterRate').value)   || 0;
-        const wUnit   = Math.max(wAfter - wBefore, 0);
-        const wTotal  = wUnit * wRate;
-        document.getElementById('waterUnit').innerText  = wUnit;
-        document.getElementById('waterTotal').innerText = wTotal.toFixed(2);
-
-        const eBefore = parseFloat(document.getElementById('elecBefore').value) || 0;
-        const eAfter  = parseFloat(document.getElementById('elecAfter').value)  || 0;
-        const eRate   = parseFloat(document.getElementById('elecRate').value)   || 0;
-        const eUnit   = Math.max(eAfter - eBefore, 0);
-        const eTotal  = eUnit * eRate;
-        document.getElementById('elecUnit').innerText  = eUnit;
-        document.getElementById('elecTotal').innerText = eTotal.toFixed(2);
-
-        document.getElementById('grandTotal').innerText =
-            (rent + wTotal + eTotal + internet - discount).toFixed(2);
-    };
+    // ฟังก์ชันคำนวณบิล (calculateInvoice) ถูกย้ายไปอยู่ในไฟล์ billing-calc.js แล้ว
+    // ถ้าจะแก้สูตรคำนวณ ให้ไปแก้ที่ไฟล์ billing-calc.js ไฟล์เดียว ไม่ต้องแก้ที่นี่
 
     // ─── Date Helpers ─────────────────────────────────────────────────
     window.updateDateDisplay = function (input) {

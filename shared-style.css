@@ -1,0 +1,219 @@
+/* ============================================================
+   shared-style.css
+   ไฟล์นี้เก็บ "หน้าตา" ส่วนที่ใช้เหมือนกันทั้งใน calculator.html
+   และ index.html (สี, ตาราง, ปุ่ม, กล่องใบเสร็จ ฯลฯ)
+
+   ต่อไปนี้ถ้าจะแก้สีหลักของเว็บ หรือแก้หน้าตาตาราง/ปุ่ม
+   ให้แก้ที่ไฟล์นี้ไฟล์เดียว ไม่ต้องไปแก้ทีละไฟล์ HTML แล้ว
+
+   สำคัญ: ไฟล์นี้ต้องอยู่โฟลเดอร์เดียวกับ calculator.html และ
+   index.html เสมอ ไม่งั้นหน้าเว็บจะไม่มีสไตล์เลย
+   ============================================================ */
+
+:root {
+    --primary-color: #2b579a;
+    --primary-hover: #1e3d6b;
+    --bg-color: #f4f6f9;
+    --card-bg: #ffffff;
+    --text-color: #333333;
+    --border-color: #cccccc;
+    --success-color: #2ea44f;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: 'Sarabun', 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+}
+
+/* แต่ละหน้ากำหนด max-width ของตัวเองเพิ่มได้ */
+.container {
+    margin: 0 auto;
+}
+
+/* โครงพื้นฐานของแถวหัวข้อบนสุด แต่ละหน้าปรับ margin/gap เพิ่มเองได้ */
+.header-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* กล่องใบเสร็จ/บิล */
+.invoice-box {
+    border: 1px solid var(--border-color);
+    padding: 25px;
+    background: #fff;
+    position: relative;
+}
+
+.invoice-header {
+    border-bottom: 2px solid #333;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.invoice-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+    color: #000;
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+/* การ์ดเนื้อหา ใช้ทั้งหน้าคำนวณเปล่า (.tab-content-like)
+   และแท็บในหน้าหลัก (.tab-content) */
+.tab-content-like,
+.tab-content {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* ตาราง */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+th, td {
+    border: 1px solid #333;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 15px;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+td.left {
+    text-align: left;
+    font-weight: bold;
+}
+
+/* ช่องกรอกข้อมูลทุกแบบที่ใช้ในระบบ */
+input[type="number"], input[type="text"], input[type="email"],
+input[type="password"], input[type="date"], select {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 15px;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+input:focus, select:focus {
+    outline: 2px solid var(--primary-color);
+}
+
+/* แถวรวมยอด / ยอดสุทธิ */
+.total-row {
+    background-color: #eaeff7;
+    font-weight: bold;
+}
+
+.grand-total {
+    font-size: 22px;
+    color: #d32f2f;
+    font-weight: bold;
+}
+
+.invoice-footer {
+    margin-top: 15px;
+    border-top: 1px solid #333;
+    padding-top: 10px;
+}
+
+.signature-area {
+    margin-top: 10px;
+    text-align: center;
+    float: right;
+    width: 300px;
+}
+
+.clear {
+    clear: both;
+}
+
+/* ปุ่มต่างๆ */
+.btn-group {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+}
+
+/* ─── ตอนสั่งพิมพ์ / บันทึกเป็น PDF (ส่วนที่เหมือนกันทั้งสองหน้า) ─── */
+@media print {
+    @page {
+        size: landscape;
+        margin: 10mm;
+    }
+    body {
+        background: white;
+        padding: 0;
+        color: #000;
+    }
+    .container {
+        max-width: 100%;
+    }
+    .tab-content-like, .tab-content {
+        box-shadow: none;
+        padding: 0;
+    }
+    .invoice-box {
+        border: none;
+        padding: 0;
+        width: 100%;
+    }
+    th, td {
+        padding: 6px 8px;
+        font-size: 14px;
+    }
+    .grand-total {
+        font-size: 20px;
+    }
+}
