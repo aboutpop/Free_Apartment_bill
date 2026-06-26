@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard จัดการห้องเช่า</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --blue-dark:   #1a3a6b;
+            --blue-main:   #2b579a;
+            --blue-mid:    #3d6fbf;
+            --blue-light:  #e8f0fe;
+            --blue-pale:   #f4f7fd;
+            --green:       #16a34a;
+            --green-light: #dcfce7;
+            --red:         #dc2626;
+            --red-light:   #fee2e2;
+            --amber:       #d97706;
+            --amber-light: #fef3c7;
+            --gray:        #6b7280;
+            --gray-light:  #f3f4f6;
+            --gray-border: #e5e7eb;
+            --white:       #ffffff;
+            --text-dark:   #111827;
+            --text-mid:    #374151;
+            --text-soft:   #6b7280;
+            --shadow-sm:   0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md:   0 4px 12px rgba(0,0,0,0.12);
+            --shadow-lg:   0 8px 24px rgba(0,0,0,0.15);
+            --radius:      12px;
+            --radius-sm:   8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sarabun', 'Helvetica Neue', Arial, sans-serif;
+            background: var(--blue-pale);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        /* ─── Login Overlay ─── */
+        #loginOverlay {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue-main) 100%);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999; padding: 20px;
+        }
+        .login-card {
+            background: var(--white); border-radius: 16px;
+            padding: 44px 40px; width: 100%; max-width: 400px;
+            box-shadow: var(--shadow-lg); text-align: center;
+        }
+        .login-card .login-logo {
+            width: 64px; height: 64px; margin: 0 auto 20px;
+            background: var(--blue-light); border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px;
+        }
+        .login-card h2 { font-size: 22px; font-weight: 700; color: var(--blue-dark); margin-bottom: 6px; }
+        .login-card p  { font-size: 14px; color: var(--text-soft); margin-bottom: 28px; }
+        .form-group { margin-bottom: 18px; text-align: left; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-mid); margin-bottom: 6px; }
+        .form-group input {
+            width: 100%; padding: 11px 14px;
+            border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm);
+            font-size: 15px; transition: border-color 0.2s; font-family: inherit;
+        }
+        .form-group input:focus { outline: none; border-color: var(--blue-main); }
+        .btn-login {
+            width: 100%; padding: 13px; background: var(--blue-main);
+            color: white; border: none; border-radius: var(--radius-sm);
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            transition: background 0.2s; font-family: inherit;
+        }
+        .btn-login:hover { background: var(--blue-dark); }
+        .btn-login:disabled { background: #93afd4; cursor: not-allowed; }
+        #loginError { color: var(--red); font-size: 13px; margin-top: 12px; min-height: 18px; }
+        .login-back { margin-top: 20px; }
+        .login-back a { color: var(--blue-main); font-size: 14px; text-decoration: none; font-weight: 600; }
+        .login-back a:hover { text-decoration: underline; }
+
+        /* ─── Main App ─── */
+        #mainApp { display: none; }
+
+        /* ─── Top Nav ─── */
+        .topnav {
+            background: var(--blue-dark); padding: 0 28px;
+            display: flex; align-items: center; height: 60px; gap: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .topnav-logo {
+            width: 38px; height: 38px; border-radius: 8px;
+            object-fit: contain; background: rgba(255,255,255,0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0; overflow: hidden;
+        }
+        .topnav-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .topnav-title { font-size: 17px; font-weight: 700; color: white; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .topnav-user { font-size: 13px; color: rgba(255,255,255,0.7); }
+        .topnav-actions { display: flex; gap: 10px; align-items: center; }
+        .btn-nav {
+            padding: 7px 16px; border-radius: 6px; border: none;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: inherit; text-decoration: none; display: inline-flex;
+            align-items: center; gap: 5px;
+        }
+        .btn-nav-ghost { background: rgba(255,255,255,0.12); color: white; transition: background 0.2s; }
+        .btn-nav-ghost:hover { background: rgba(255,255,255,0.22); }
+        .btn-nav-red { background: #dc2626; color: white; }
+        .btn-nav-red:hover { background: #b91c1c; }
+
+        /* ─── Page Wrapper ─── */
+        .page { padding: 24px 28px; max-width: 1300px; margin: 0 auto; }
+
+        /* ─── Summary Bar ─── */
+        .summary-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .summary-card {
+            background: var(--white); border-radius: var(--radius);
+            padding: 18px 20px; box-shadow: var(--shadow-sm);
+            border-left: 4px solid transparent;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .summary-card.total    { border-color: var(--blue-main); }
+        .summary-card.occupied { border-color: var(--green); }
+        .summary-card.vacant   { border-color: var(--gray); }
+        .summary-card.overdue  { border-color: var(--red); }
+        .summary-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .summary-card.total    .summary-icon { background: var(--blue-light); }
+        .summary-card.occupied .summary-icon { background: var(--green-light); }
+        .summary-card.vacant   .summary-icon { background: var(--gray-light); }
+        .summary-card.overdue  .summary-icon { background: var(--red-light); }
+        .summary-num { font-size: 28px; font-weight: 800; line-height: 1; }
+        .summary-card.total    .summary-num { color: var(--blue-main); }
+        .summary-card.occupied .summary-num { color: var(--green); }
+        .summary-card.vacant   .summary-num { color: var(--gray); }
+        .summary-card.overdue  .summary-num { color: var(--red); }
+        .summary-label { font-size: 13px; color: var(--text-soft); margin-top: 3px; }
+
+        /* ─── Section Header ─── */
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .section-title { font-size: 18px; font-weight: 700; color: var(--blue-dark); }
+        .section-sub { font-size: 13px; color: var(--text-soft); margin-top: 2px; }
+
+        /* ─── Settings Panel ─── */
+        .settings-panel { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 24px; overflow: hidden; }
+        .settings-panel-header {
+            padding: 16px 22px; background: var(--blue-light);
+            border-bottom: 1px solid #c8d9f5;
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; user-select: none;
+        }
+        .settings-panel-header h3 { font-size: 15px; font-weight: 700; color: var(--blue-dark); display: flex; align-items: center; gap: 8px; }
+        .settings-toggle { font-size: 18px; color: var(--blue-mid); transition: transform 0.2s; }
+        .settings-toggle.open { transform: rotate(180deg); }
+        .settings-body { padding: 22px; display: none; }
+        .settings-body.open { display: block; }
+        .settings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .setting-item label { display: block; font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .setting-item input { width: 100%; padding: 9px 12px; border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; }
+        .setting-item input:focus { outline: none; border-color: var(--blue-main); }
+        .settings-note { font-size: 12px; color: var(--text-soft); background: var(--blue-pale); border-radius: 6px; padding: 8px 12px; margin-top: 14px; border-left: 3px solid var(--blue-mid); }
+        .settings-actions { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+        .btn-save { padding: 9px 22px; background: var(--blue-main); color: white; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-save:hover { background: var(--blue-dark); }
+        .btn-danger-sm { padding: 9px 18px; background: white; color: var(--red); border: 1.5px solid var(--red); border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-danger-sm:hover { background: var(--red-light); }
+
+        /* ─── Room Grid ─── */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+
+        /* ─── Room Card ─── */
+        .room-card {
+            background: var(--white); border-radius: var(--radius);
+            box-shadow: var(--shadow-sm); cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            overflow: hidden; border: 2px solid transparent; position: relative;
+        }
+        .room-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .room-card.occupied { border-color: var(--green); }
+        .room-card.vacant   { border-color: var(--gray-border); }
+        .room-card.overdue  { border-color: var(--red); }
+        .room-card-top { padding: 16px 18px 12px; display: flex; align-items: flex-start; justify-content: space-between; }
+        .room-number { font-size: 42px; font-weight: 800; line-height: 1; color: var(--blue-dark); letter-spacing: -1px; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+        .status-badge.occupied { background: var(--green-light); color: var(--green); }
+        .status-badge.vacant   { background: var(--gray-light);  color: var(--gray); }
+        .status-badge.overdue  { background: var(--red-light);   color: var(--red); }
+        .room-card-body { padding: 0 18px 16px; }
+        .room-tenant { font-size: 16px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .room-tenant.empty { color: var(--text-soft); font-style: italic; font-weight: 400; }
+        .room-phone { font-size: 13px; color: var(--text-soft); margin-bottom: 10px; }
+        .room-divider { height: 1px; background: var(--gray-border); margin: 10px 0; }
+        .room-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .room-meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-soft); font-weight: 600; }
+        .room-meta-value { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+        .room-meta-value.red { color: var(--red); }
+        .room-card-footer { padding: 10px 18px; background: var(--gray-light); border-top: 1px solid var(--gray-border); display: flex; align-items: center; justify-content: space-between; }
+        .overdue-flag { font-size: 12px; font-weight: 700; color: var(--red); }
+        .paid-flag    { font-size: 12px; font-weight: 700; color: var(--green); }
+        .room-card-footer .edit-hint { font-size: 11px; color: var(--text-soft); }
+
+        /* ─── Modal ─── */
+        .modal-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(17,24,39,0.55); backdrop-filter: blur(4px);
+            z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal {
+            background: var(--white); border-radius: 16px;
+            width: 100%; max-width: 560px; max-height: 90vh;
+            overflow-y: auto; box-shadow: var(--shadow-lg);
+        }
+        .modal-header {
+            padding: 22px 26px 18px; border-bottom: 1px solid var(--gray-border);
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; background: var(--white); z-index: 1;
+            border-radius: 16px 16px 0 0;
+        }
+        .modal-room-num { font-size: 36px; font-weight: 800; color: var(--blue-dark); line-height: 1; }
+        .modal-title { font-size: 14px; color: var(--text-soft); margin-top: 2px; }
+        .modal-close { width: 34px; height: 34px; border-radius: 8px; background: var(--gray-light); border: none; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: var(--text-soft); transition: background 0.15s; }
+        .modal-close:hover { background: var(--gray-border); }
+        .modal-body { padding: 22px 26px; }
+        .modal-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-soft); font-weight: 700; margin-bottom: 12px; margin-top: 20px; padding-bottom: 6px; border-bottom: 1px solid var(--gray-border); }
+        .modal-section-title:first-of-type { margin-top: 0; }
+        .modal-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .modal-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 5px; }
+        .modal-field input, .modal-field select { width: 100%; padding: 9px 12px; border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; }
+        .modal-field input:focus, .modal-field select:focus { outline: none; border-color: var(--blue-main); }
+        .modal-field input[readonly] { background: var(--gray-light); color: var(--text-soft); }
+        .modal-field.full { grid-column: 1 / -1; }
+        .modal-footer { padding: 16px 26px 22px; display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-modal-cancel { padding: 10px 22px; background: var(--gray-light); color: var(--text-mid); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-modal-save { padding: 10px 26px; background: var(--blue-main); color: white; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-modal-save:hover { background: var(--blue-dark); }
+        .btn-modal-delete { padding: 10px 22px; background: white; color: var(--red); border: 1.5px solid var(--red); border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; margin-right: auto; }
+        .btn-modal-delete:hover { background: var(--red-light); }
+        .modal-msg { font-size: 13px; font-weight: 600; color: var(--green); min-height: 20px; }
+
+        /* ─── Meter Edited Notice (ใน Modal) ─── */
+        .meter-edited-notice {
+            background: var(--amber-light); border: 1px solid #fbbf24;
+            border-radius: 8px; padding: 10px 14px;
+            font-size: 13px; color: #92400e;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* ─── Modal เพิ่มห้องใหม่ ─── */
+        .modal-add { max-width: 400px; }
+        .add-suggest { font-size: 12px; color: var(--text-soft); margin-top: 4px; }
+
+        /* ─── Toggle Switch ─── */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+        .toggle-switch.occupied-toggle input:checked + .toggle-slider { background: var(--blue-main); }
+        .toggle-row { display: flex; align-items: center; gap: 12px; padding: 4px 0; }
+        .toggle-label { font-size: 14px; color: var(--text-mid); }
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: var(--gray-border); border-radius: 24px; transition: background 0.2s; cursor: pointer; }
+        .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .toggle-switch input:checked + .toggle-slider { background: var(--green); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+        /* ─── Empty state ─── */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-soft); }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .page { padding: 16px; }
+            .summary-bar { grid-template-columns: repeat(2, 1fr); }
+            .settings-grid { grid-template-columns: 1fr 1fr; }
+            .modal-field-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .summary-bar { grid-template-columns: 1fr 1fr; }
+            .settings-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── Login ─── -->
+<div id="loginOverlay">
+    <div class="login-card">
+        <div class="login-logo">🏠</div>
+        <h2>Dashboard จัดการห้องเช่า</h2>
+        <p>เข้าสู่ระบบเพื่อดูและจัดการข้อมูลห้องทั้งหมด</p>
+        <div class="form-group">
+            <label>อีเมล</label>
+            <input type="email" id="loginEmail" placeholder="example@email.com"
+                   onkeydown="if(event.key==='Enter') handleLogin()">
+        </div>
+        <div class="form-group">
+            <label>รหัสผ่าน</label>
+            <input type="password" id="loginPassword" placeholder="••••••••"
+                   onkeydown="if(event.key==='Enter') handleLogin()">
+        </div>
+        <button class="btn-login" id="loginBtn" onclick="handleLogin()">🔓 เข้าสู่ระบบ</button>
+        <div id="loginError"></div>
+        <div class="login-back">
+            <a href="index.html">← กลับหน้าออกใบเสร็จ</a>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Main App ─── -->
+<div id="mainApp">
+
+    <nav class="topnav">
+        <div class="topnav-logo" id="navLogo">🏠</div>
+        <div class="topnav-title">Dashboard จัดการห้องเช่า</div>
+        <span class="topnav-user" id="navUser"></span>
+        <div class="topnav-actions">
+            <a href="index.html" class="btn-nav btn-nav-ghost">📝 ออกใบเสร็จ</a>
+            <button class="btn-nav btn-nav-red" onclick="handleLogout()">🔒 ออก</button>
+        </div>
+    </nav>
+
+    <div class="page">
+
+        <!-- Summary Bar -->
+        <div class="summary-bar">
+            <div class="summary-card total">
+                <div class="summary-icon">🏠</div>
+                <div><div class="summary-num" id="sumTotal">—</div><div class="summary-label">ห้องทั้งหมด</div></div>
+            </div>
+            <div class="summary-card occupied">
+                <div class="summary-icon">👤</div>
+                <div><div class="summary-num" id="sumOccupied">—</div><div class="summary-label">มีผู้เช่า</div></div>
+            </div>
+            <div class="summary-card vacant">
+                <div class="summary-icon">🔑</div>
+                <div><div class="summary-num" id="sumVacant">—</div><div class="summary-label">ห้องว่าง</div></div>
+            </div>
+            <div class="summary-card overdue">
+                <div class="summary-icon">⚠️</div>
+                <div><div class="summary-num" id="sumOverdue">—</div><div class="summary-label">ค้างชำระ</div></div>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel">
+            <div class="settings-panel-header" onclick="toggleSettings()">
+                <h3>⚙️ ตั้งค่าระบบและฐานข้อมูล</h3>
+                <span class="settings-toggle" id="settingsToggle">▼</span>
+            </div>
+            <div class="settings-body" id="settingsBody">
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>Supabase URL</label>
+                        <input type="text" id="cfgUrl" placeholder="https://xxx.supabase.co" oninput="saveConfig()">
+                    </div>
+                    <div class="setting-item">
+                        <label>Supabase Anon Key</label>
+                        <input type="text" id="cfgKey" placeholder="eyJ..." oninput="saveConfig()">
+                    </div>
+                    <div class="setting-item">
+                        <label>ค่าน้ำต่อหน่วย (บาท)</label>
+                        <input type="number" id="cfgWaterRate" value="30" step="0.5" oninput="saveConfig()">
+                    </div>
+                    <div class="setting-item">
+                        <label>ค่าไฟต่อหน่วย (บาท)</label>
+                        <input type="number" id="cfgElecRate" value="6" step="0.5" oninput="saveConfig()">
+                    </div>
+                    <div class="setting-item">
+                        <label>ลิงก์โลโก้หอพัก</label>
+                        <input type="text" id="cfgLogoUrl" placeholder="URL รูปภาพโลโก้" oninput="saveConfig(); updateNavLogo()">
+                    </div>
+                    <div class="setting-item">
+                        <label>บัญชีธนาคาร / พร้อมเพย์</label>
+                        <input type="text" id="cfgBankInfo" placeholder="กสิกรไทย 123-4-56789-0" oninput="saveConfig()">
+                    </div>
+                    <div class="setting-item">
+                        <label>ลิงก์ QR Code ชำระเงิน</label>
+                        <input type="text" id="cfgQrUrl" placeholder="URL รูป QR Code" oninput="saveConfig()">
+                    </div>
+                </div>
+                <div class="settings-note">
+                    💡 ค่าทั้งหมดบันทึกไว้ในเบราว์เซอร์นี้ ถ้าเปลี่ยนเครื่องต้องกรอกใหม่
+                    | ค่าน้ำ-ค่าไฟที่ตั้งไว้จะถูกดึงไปใช้ตอนออกใบเสร็จใน index.html โดยอัตโนมัติ
+                </div>
+                <div class="settings-actions">
+                    <button class="btn-danger-sm" onclick="clearAllConfig()">🗑️ ล้างทั้งหมดและออกจากระบบ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room Grid Header -->
+        <div class="section-header">
+            <div>
+                <div class="section-title">📋 ห้องเช่าทั้งหมด</div>
+                <div class="section-sub" id="roomGridSub">กำลังโหลด...</div>
+            </div>
+            <button class="btn-save" onclick="openAddRoomModal()" style="font-size:13px; padding:8px 18px;">
+                ➕ เพิ่มห้องใหม่
+            </button>
+        </div>
+
+        <!-- Room Grid -->
+        <div class="room-grid" id="roomGrid">
+            <div class="empty-state" style="grid-column:1/-1;">
+                <div class="icon">🔄</div>
+                <h3>กำลังโหลดข้อมูลห้อง...</h3>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ─── Modal แก้ไขห้อง ─── -->
+<div class="modal-backdrop" id="roomModal" style="display:none;" onclick="closeModalOnBackdrop(event)">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <div class="modal-room-num">ห้อง <span id="mRoomNum">—</span></div>
+                <div class="modal-title">แก้ไขรายละเอียดห้อง</div>
+            </div>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <div class="modal-section-title">ข้อมูลผู้เช่า</div>
+            <div class="modal-field-grid">
+                <div class="modal-field full">
+                    <label>ชื่อ-นามสกุล ผู้เช่า <span style="color:#999; font-weight:400;">(ห้ามปล่อยว่าง เมื่อมีผู้เช่า)</span></label>
+                    <input type="text" id="mTenant" placeholder="(ไม่มีผู้เช่า)">
+                </div>
+                <div class="modal-field">
+                    <label>หมายเลขโทรศัพท์</label>
+                    <input type="text" id="mPhone" placeholder="0812345678">
+                </div>
+                <div class="modal-field">
+                    <label>เงินมัดจำ (บาท)</label>
+                    <input type="number" id="mDeposit" placeholder="0">
+                </div>
+                <div class="modal-field">
+                    <label>ค่าเช่าเริ่มต้น (บาท)</label>
+                    <input type="number" id="mBaseRent" placeholder="2500">
+                </div>
+                <div class="modal-field">
+                    <label>ค่าปรับ (บาท)</label>
+                    <input type="number" id="mFine" placeholder="0">
+                </div>
+                <div class="modal-field full">
+                    <label>สถานะห้อง &amp; การจ่ายเงิน</label>
+                    <div style="display:flex; gap:24px; flex-wrap:wrap; padding-top:6px;">
+                        <div class="toggle-row">
+                            <label class="toggle-switch occupied-toggle">
+                                <input type="checkbox" id="mOccupied">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label" id="mOccupiedLabel">ห้องว่าง</span>
+                        </div>
+                        <div class="toggle-row">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="mPaidStatus">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label" id="mPaidLabel">ยังไม่จ่าย</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section-title">ข้อมูลใบเสร็จเดือนล่าสุด (แก้มิเตอร์ได้)</div>
+            <div class="modal-field-grid">
+                <div class="modal-field">
+                    <label>ค่าห้องรวมเดือนล่าสุด (บาท)</label>
+                    <input type="number" id="mLastTotal" readonly>
+                </div>
+                <div class="modal-field">
+                    <label>วันที่ออกใบเสร็จล่าสุด</label>
+                    <input type="text" id="mLastMonth" readonly>
+                </div>
+                <div class="modal-field">
+                    <label>เลขมิเตอร์น้ำล่าสุด ✏️</label>
+                    <input type="number" id="mLastWater" placeholder="0">
+                </div>
+                <div class="modal-field">
+                    <label>เลขมิเตอร์ไฟล่าสุด ✏️</label>
+                    <input type="number" id="mLastElec" placeholder="0">
+                </div>
+            </div>
+
+            <!-- แจ้งเตือนมิเตอร์ถูกแก้ไข — แสดงเฉพาะเมื่อ meter_edited = true -->
+            <div id="mMeterEditedNotice" class="meter-edited-notice" style="display:none; margin-top:16px;">
+                🔧 <span id="mMeterEditedText">เลขมิเตอร์ถูกแก้ไขแล้ว</span>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-delete" onclick="deleteRoom()" id="btnDeleteRoom">🗑️ ลบห้องนี้</button>
+            <span class="modal-msg" id="modalMsg"></span>
+            <button class="btn-modal-cancel" onclick="closeModal()">ยกเลิก</button>
+            <button class="btn-modal-save" onclick="saveRoom()">💾 บันทึก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Modal เพิ่มห้องใหม่ ─── -->
+<div class="modal-backdrop" id="addRoomModal" style="display:none;" onclick="closeAddModalOnBackdrop(event)">
+    <div class="modal modal-add">
+        <div class="modal-header">
+            <div>
+                <div class="modal-room-num" style="font-size:22px;">➕ เพิ่มห้องใหม่</div>
+                <div class="modal-title">กรอกข้อมูลห้องที่ต้องการเพิ่ม</div>
+            </div>
+            <button class="modal-close" onclick="closeAddRoomModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-field" style="margin-bottom:16px;">
+                <label>หมายเลขห้อง (สูงสุด 5 ตัวอักษร)</label>
+                <input type="text" id="addRoomNumber" maxlength="5" placeholder="เช่น 11, A1, 201"
+                       oninput="this.value = this.value.toUpperCase()">
+                <div class="add-suggest" id="addRoomSuggest"></div>
+            </div>
+            <div class="modal-field">
+                <label>ค่าเช่าเริ่มต้น (บาท)</label>
+                <input type="number" id="addBaseRent" placeholder="2500" value="2500">
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between;">
+            <span class="modal-msg" id="addRoomMsg" style="color:var(--red);"></span>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-modal-cancel" onclick="closeAddRoomModal()">ยกเลิก</button>
+                <button class="btn-modal-save" onclick="confirmAddRoom()">➕ เพิ่มห้อง</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    const store = {
+        get:    (k) => { try { return localStorage.getItem(k); } catch(e) { return null; } },
+        set:    (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} },
+        remove: (k) => { try { localStorage.removeItem(k); } catch(e) {} }
+    };
+
+    let supabaseClient = null;
+    let roomsData = [];
+    let currentRoomId = null;
+
+    // ─── Init ──────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        loadConfigToInputs();
+        updateNavLogo();
+        initSupabase();
+        checkSession();
+
+        document.getElementById('mPaidStatus').addEventListener('change', function () {
+            document.getElementById('mPaidLabel').textContent = this.checked ? 'จ่ายแล้ว ✅' : 'ยังไม่จ่าย ❌';
+        });
+        document.getElementById('mOccupied').addEventListener('change', function () {
+            document.getElementById('mOccupiedLabel').textContent = this.checked ? 'มีผู้เช่า 🏠' : 'ห้องว่าง 🔑';
+        });
+    });
+
+    function loadConfigToInputs() {
+        const map = {
+            supabaseUrl: 'cfgUrl',
+            supabaseKey: 'cfgKey',
+            waterRate:   'cfgWaterRate',
+            elecRate:    'cfgElecRate',
+            logoUrl:     'cfgLogoUrl',
+            bankInfo:    'cfgBankInfo',
+            qrUrl:       'cfgQrUrl',
+        };
+        Object.entries(map).forEach(([k, id]) => {
+            const val = store.get(k);
+            if (val !== null) document.getElementById(id).value = val;
+        });
+    }
+
+    // ─── Supabase ──────────────────────────────────────
+    function initSupabase() {
+        const url = store.get('supabaseUrl') || '';
+        const key = store.get('supabaseKey') || '';
+        if (url && key) {
+            supabaseClient = supabase.createClient(url, key, {
+                auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+            });
+            return true;
+        }
+        supabaseClient = null;
+        return false;
+    }
+
+    async function checkSession() {
+        if (!supabaseClient) { showLogin(); return; }
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) showApp(session.user.email);
+            else showLogin();
+        } catch { showLogin(); }
+    }
+
+    function showLogin() {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+    }
+
+    async function showApp(email) {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('navUser').textContent = '👤 ' + email;
+
+        // ตรวจ session หมดอายุในแท็บอื่น
+        supabaseClient.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') showLogin();
+        });
+
+        await loadRooms();
+    }
+
+    window.handleLogin = async function () {
+        const errorEl = document.getElementById('loginError');
+        const btn = document.getElementById('loginBtn');
+        errorEl.textContent = '';
+
+        const ok = initSupabase();
+        if (!ok) {
+            errorEl.textContent = '❌ ยังไม่ได้ตั้งค่า Supabase — กรุณาตั้งค่าใน index.html ก่อน';
+            return;
+        }
+
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass  = document.getElementById('loginPassword').value;
+        if (!email || !pass) { errorEl.textContent = '❌ กรุณากรอกให้ครบ'; return; }
+
+        btn.disabled = true; btn.textContent = '⏳ กำลังเข้าสู่ระบบ...';
+        try {
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+            if (error) {
+                let msg = error.message;
+                if (msg.includes('Invalid login credentials')) msg = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+                errorEl.textContent = '❌ ' + msg;
+            } else {
+                showApp(data.user.email);
+            }
+        } catch (e) {
+            errorEl.textContent = '❌ ' + e.message;
+        } finally {
+            btn.disabled = false; btn.textContent = '🔓 เข้าสู่ระบบ';
+        }
+    };
+
+    window.handleLogout = async function () {
+        if (supabaseClient) {
+            try { await supabaseClient.auth.signOut(); } catch {}
+            supabaseClient = null;
+        }
+        showLogin();
+    };
+
+    // ─── Config Save ───────────────────────────────────
+    window.saveConfig = function () {
+        store.set('supabaseUrl', document.getElementById('cfgUrl').value.trim());
+        store.set('supabaseKey', document.getElementById('cfgKey').value.trim());
+        store.set('waterRate',   document.getElementById('cfgWaterRate').value);
+        store.set('elecRate',    document.getElementById('cfgElecRate').value);
+        store.set('logoUrl',     document.getElementById('cfgLogoUrl').value.trim());
+        store.set('bankInfo',    document.getElementById('cfgBankInfo').value);
+        store.set('qrUrl',       document.getElementById('cfgQrUrl').value.trim());
+    };
+
+    window.clearAllConfig = async function () {
+        if (!confirm('ล้างการตั้งค่าทั้งหมดและออกจากระบบ?')) return;
+        if (supabaseClient) { try { await supabaseClient.auth.signOut(); } catch {} supabaseClient = null; }
+        ['supabaseUrl','supabaseKey','waterRate','elecRate','logoUrl','bankInfo','qrUrl'].forEach(k => store.remove(k));
+        location.reload();
+    };
+
+    window.updateNavLogo = function () {
+        const url = document.getElementById('cfgLogoUrl')?.value.trim() || store.get('logoUrl') || '';
+        const el = document.getElementById('navLogo');
+        if (!el) return;
+        el.innerHTML = url
+            ? `<img src="${url}" alt="logo" onerror="this.parentElement.textContent='🏠'">`
+            : '🏠';
+    };
+
+    window.toggleSettings = function () {
+        const body = document.getElementById('settingsBody');
+        const toggle = document.getElementById('settingsToggle');
+        const isOpen = body.classList.toggle('open');
+        toggle.classList.toggle('open', isOpen);
+    };
+
+    // ─── Load Rooms ─────────────────────────────────────
+    async function loadRooms() {
+        const grid = document.getElementById('roomGrid');
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔄</div><h3>กำลังโหลด...</h3></div>`;
+        if (!supabaseClient) return;
+        try {
+            const { data, error } = await supabaseClient
+                .from('rooms_data')
+                .select('*')
+                .order('room_number', { ascending: true });
+            if (error) throw error;
+            roomsData = data || [];
+            renderRooms();
+        } catch (e) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+                <div class="icon">⚠️</div>
+                <h3>ไม่สามารถโหลดข้อมูลได้</h3>
+                <p style="margin-top:8px; font-size:14px;">${e.message}</p>
+            </div>`;
+        }
+    }
+
+    function renderRooms() {
+        const grid = document.getElementById('roomGrid');
+        grid.innerHTML = '';
+
+        if (roomsData.length === 0) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+                <div class="icon">🏠</div>
+                <h3>ยังไม่มีข้อมูลห้อง</h3>
+                <p style="margin-top:8px;">กดปุ่ม "➕ เพิ่มห้องใหม่" เพื่อเริ่มต้น</p>
+            </div>`;
+        }
+
+        let occupied = 0, vacant = 0, overdue = 0;
+
+        roomsData.forEach(room => {
+            const hasTenant = room.tenant_name && room.tenant_name.trim() !== '';
+            const isOverdue = hasTenant && !room.paid_status;
+            let statusClass = hasTenant ? (isOverdue ? 'overdue' : 'occupied') : 'vacant';
+            let statusText  = hasTenant ? (isOverdue ? '⚠️ ค้างชำระ' : '✅ มีผู้เช่า') : '🔑 ว่าง';
+
+            if (hasTenant) occupied++; else vacant++;
+            if (isOverdue) overdue++;
+
+            const card = document.createElement('div');
+            card.className = `room-card ${statusClass}`;
+            card.onclick = () => openModal(room.id);
+            card.innerHTML = `
+                <div class="room-card-top">
+                    <div class="room-number">${room.room_number}</div>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                <div class="room-card-body">
+                    <div class="room-tenant ${hasTenant ? '' : 'empty'}">${hasTenant ? room.tenant_name : 'ห้องว่าง'}</div>
+                    <div class="room-phone">${room.phone || (hasTenant ? '—' : '')}</div>
+                    <div class="room-divider"></div>
+                    <div class="room-meta">
+                        <div class="room-meta-item">
+                            <div class="room-meta-label">ค่าเช่า</div>
+                            <div class="room-meta-value">${(room.base_rent || 0).toLocaleString()} ฿</div>
+                        </div>
+                        <div class="room-meta-item">
+                            <div class="room-meta-label">มัดจำ</div>
+                            <div class="room-meta-value">${(room.deposit || 0).toLocaleString()} ฿</div>
+                        </div>
+                        <div class="room-meta-item">
+                            <div class="room-meta-label">ใบเสร็จล่าสุด</div>
+                            <div class="room-meta-value ${isOverdue ? 'red' : ''}">${room.last_total ? room.last_total.toLocaleString() + ' ฿' : '—'}</div>
+                        </div>
+                        <div class="room-meta-item">
+                            <div class="room-meta-label">เดือน</div>
+                            <div class="room-meta-value">${room.last_month || '—'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="room-card-footer">
+                    <span class="${isOverdue ? 'overdue-flag' : 'paid-flag'}">
+                        ${!hasTenant ? '' : (isOverdue ? '❌ ยังไม่จ่าย' : '✅ จ่ายแล้ว')}
+                    </span>
+                    <span class="edit-hint">${room.meter_edited ? '🔧 มิเตอร์ถูกแก้' : 'แตะเพื่อแก้ไข'}</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        const total = roomsData.length;
+        document.getElementById('sumTotal').textContent    = total;
+        document.getElementById('sumOccupied').textContent = occupied;
+        document.getElementById('sumVacant').textContent   = vacant;
+        document.getElementById('sumOverdue').textContent  = overdue;
+        document.getElementById('roomGridSub').textContent = `แสดง ${total} ห้อง | มีผู้เช่า ${occupied} ห้อง | ว่าง ${vacant} ห้อง`;
+    }
+
+    // ─── Modal แก้ไขห้อง ────────────────────────────────
+    window.openModal = function (id) {
+        const room = roomsData.find(r => r.id === id);
+        if (!room) return;
+        currentRoomId = id;
+
+        document.getElementById('mRoomNum').textContent    = room.room_number;
+        document.getElementById('mTenant').value           = room.tenant_name  || '';
+        document.getElementById('mPhone').value            = room.phone        || '';
+        document.getElementById('mDeposit').value          = room.deposit      ?? '';
+        document.getElementById('mBaseRent').value         = room.base_rent    ?? '';
+        document.getElementById('mFine').value             = room.fine         ?? '';
+        document.getElementById('mLastTotal').value        = room.last_total   ?? '';
+        document.getElementById('mLastMonth').value        = room.last_month   || '';
+        document.getElementById('mLastWater').value        = room.last_water   ?? '';
+        document.getElementById('mLastElec').value         = room.last_elec    ?? '';
+
+        const paid     = !!room.paid_status;
+        const occupied = !!(room.tenant_name && room.tenant_name.trim() !== '');
+        document.getElementById('mPaidStatus').checked       = paid;
+        document.getElementById('mPaidLabel').textContent    = paid ? 'จ่ายแล้ว ✅' : 'ยังไม่จ่าย ❌';
+        document.getElementById('mOccupied').checked         = occupied;
+        document.getElementById('mOccupiedLabel').textContent = occupied ? 'มีผู้เช่า 🏠' : 'ห้องว่าง 🔑';
+        document.getElementById('modalMsg').textContent      = '';
+
+        // แสดงแจ้งเตือนมิเตอร์ถูกแก้ไข
+        const noticeEl = document.getElementById('mMeterEditedNotice');
+        const textEl   = document.getElementById('mMeterEditedText');
+        if (room.meter_edited) {
+            // แสดงวันที่แก้ไขล่าสุด (ใช้ updated_at ถ้ามี หรือแสดงข้อความสั้น)
+            const editDate = room.meter_edited_at
+                ? new Date(room.meter_edited_at).toLocaleDateString('th-TH')
+                : 'ครั้งล่าสุด';
+            textEl.textContent = `เลขมิเตอร์ถูกแก้ไขแล้ว (${editDate})`;
+            noticeEl.style.display = 'flex';
+        } else {
+            noticeEl.style.display = 'none';
+        }
+
+        document.getElementById('roomModal').style.display = 'flex';
+    };
+
+    window.closeModal = function () {
+        document.getElementById('roomModal').style.display = 'none';
+        currentRoomId = null;
+    };
+
+    window.closeModalOnBackdrop = function (e) {
+        if (e.target.id === 'roomModal') closeModal();
+    };
+
+    window.saveRoom = async function () {
+        if (!supabaseClient || !currentRoomId) return;
+        const msgEl = document.getElementById('modalMsg');
+        msgEl.style.color = 'var(--green)';
+        msgEl.textContent = '';
+
+        const room = roomsData.find(r => r.id === currentRoomId);
+        const isOccupied = document.getElementById('mOccupied').checked;
+
+        const newWater = parseFloat(document.getElementById('mLastWater').value) || 0;
+        const newElec  = parseFloat(document.getElementById('mLastElec').value)  || 0;
+
+        // เช็คว่ามิเตอร์ถูกแก้ไขหรือไม่ (เทียบกับค่าเดิม)
+        const meterChanged = room && (newWater !== (room.last_water ?? 0) || newElec !== (room.last_elec ?? 0));
+
+        const payload = {
+            tenant_name:  isOccupied ? document.getElementById('mTenant').value.trim() : '',
+            phone:        isOccupied ? document.getElementById('mPhone').value.trim() : '',
+            deposit:      parseFloat(document.getElementById('mDeposit').value)  || 0,
+            base_rent:    parseFloat(document.getElementById('mBaseRent').value) || 0,
+            fine:         parseFloat(document.getElementById('mFine').value)     || 0,
+            paid_status:  document.getElementById('mPaidStatus').checked,
+            last_water:   newWater,
+            last_elec:    newElec,
+            meter_edited: meterChanged ? true : (room ? room.meter_edited : false),
+        };
+
+        try {
+            const { error } = await supabaseClient
+                .from('rooms_data')
+                .update(payload)
+                .eq('id', currentRoomId);
+            if (error) throw error;
+            msgEl.textContent = '✅ บันทึกแล้ว';
+            await loadRooms();
+            setTimeout(closeModal, 800);
+        } catch (e) {
+            msgEl.style.color = 'var(--red)';
+            msgEl.textContent = '❌ ' + e.message;
+        }
+    };
+
+    // ─── ลบห้อง (เช็ค 3 ชั้น) ──────────────────────────
+    window.deleteRoom = async function () {
+        if (!supabaseClient || !currentRoomId) return;
+        const msgEl = document.getElementById('modalMsg');
+        msgEl.textContent = '';
+
+        const room = roomsData.find(r => r.id === currentRoomId);
+        if (!room) return;
+
+        const reasons = [];
+        if (room.tenant_name && room.tenant_name.trim() !== '') reasons.push('มีชื่อผู้เช่า');
+        if ((room.deposit || 0) > 0) reasons.push('มีเงินมัดจำ');
+
+        // เช็คประวัติใบเสร็จ
+        try {
+            const { data: records, error } = await supabaseClient
+                .from('room_records')
+                .select('id', { count: 'exact' })
+                .eq('room', room.room_number);
+
+            if (!error && records && records.length > 0) {
+                reasons.push(`มีประวัติใบเสร็จ ${records.length} รายการ`);
+            }
+        } catch {}
+
+        if (reasons.length > 0) {
+            msgEl.style.color = 'var(--red)';
+            msgEl.textContent = `❌ ลบไม่ได้ เพราะ: ${reasons.join(' / ')}`;
+            return;
+        }
+
+        if (!confirm(`ยืนยันลบห้อง ${room.room_number} หรือไม่?\n\nการลบนี้ไม่สามารถย้อนกลับได้`)) return;
+
+        try {
+            const { error } = await supabaseClient
+                .from('rooms_data')
+                .delete()
+                .eq('id', currentRoomId);
+            if (error) throw error;
+            closeModal();
+            await loadRooms();
+        } catch (e) {
+            msgEl.style.color = 'var(--red)';
+            msgEl.textContent = '❌ ' + e.message;
+        }
+    };
+
+    // ─── Modal เพิ่มห้องใหม่ ────────────────────────────
+    window.openAddRoomModal = function () {
+        // แนะนำเลขห้องถัดไป
+        const suggestEl = document.getElementById('addRoomSuggest');
+        const inputEl   = document.getElementById('addRoomNumber');
+        document.getElementById('addRoomMsg').textContent = '';
+        document.getElementById('addBaseRent').value = '2500';
+        inputEl.value = '';
+
+        if (roomsData.length > 0) {
+            const lastRoom = roomsData[roomsData.length - 1].room_number;
+            const num = parseInt(lastRoom);
+            if (!isNaN(num)) {
+                const suggested = String(num + 1);
+                inputEl.value = suggested;
+                suggestEl.textContent = `💡 ระบบแนะนำ: ห้อง ${suggested} (แก้ไขได้)`;
+            } else {
+                suggestEl.textContent = `💡 ห้องล่าสุด: ${lastRoom} — กรุณาพิมพ์เลขห้องใหม่`;
+            }
+        } else {
+            suggestEl.textContent = '💡 ยังไม่มีห้องในระบบ — กรุณากรอกเลขห้องแรก';
+        }
+
+        document.getElementById('addRoomModal').style.display = 'flex';
+        setTimeout(() => inputEl.focus(), 100);
+    };
+
+    window.closeAddRoomModal = function () {
+        document.getElementById('addRoomModal').style.display = 'none';
+    };
+
+    window.closeAddModalOnBackdrop = function (e) {
+        if (e.target.id === 'addRoomModal') closeAddRoomModal();
+    };
+
+    window.confirmAddRoom = async function () {
+        if (!supabaseClient) return;
+        const msgEl    = document.getElementById('addRoomMsg');
+        const roomNum  = document.getElementById('addRoomNumber').value.trim().toUpperCase();
+        const baseRent = parseFloat(document.getElementById('addBaseRent').value) || 0;
+
+        if (!roomNum) { msgEl.textContent = '❌ กรุณากรอกหมายเลขห้อง'; return; }
+        if (roomNum.length > 5) { msgEl.textContent = '❌ ห้องเกิน 5 ตัวอักษร'; return; }
+
+        // เช็คห้องซ้ำ
+        const exists = roomsData.some(r => r.room_number === roomNum);
+        if (exists) { msgEl.textContent = `❌ ห้อง ${roomNum} มีอยู่แล้วในระบบ`; return; }
+
+        try {
+            const { error } = await supabaseClient
+                .from('rooms_data')
+                .insert([{ room_number: roomNum, base_rent: baseRent, deposit: 0, paid_status: false }]);
+            if (error) throw error;
+            closeAddRoomModal();
+            await loadRooms();
+        } catch (e) {
+            msgEl.textContent = '❌ ' + e.message;
+        }
+    };
+
+})();
+</script>
+</body>
+</html>

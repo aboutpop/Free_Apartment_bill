@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>คู่มือติดตั้ง Supabase — ระบบห้องเช่า</title>
+    <title>คู่มือติดตั้ง Supabase — ระบบออกใบเสร็จและจัดการห้องเช่า สำหรับ SME</title>
+    <!-- Supabase JS สำหรับขั้นตอนตรวจสอบ (ขั้นตอนที่ 8) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #2b579a;
@@ -56,6 +58,15 @@
         }
         .sidebar ul li a:hover { background: #e0e8f5; color: var(--primary); }
         .sidebar ul li a.active { background: var(--primary); color: white; font-weight: bold; }
+        /* ✅ ไฮไลต์ขั้นตอนใหม่ใน sidebar */
+        .sidebar ul li a.new-step {
+            background: #fff8e1; color: #92400e; font-weight: bold;
+            animation: pulse-sidebar 2s infinite;
+        }
+        @keyframes pulse-sidebar {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+            50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+        }
 
         /* ─── Content ─── */
         .content { flex: 1; min-width: 0; }
@@ -82,24 +93,15 @@
 
         /* ─── Code Block ─── */
         .code-block {
-            background: var(--code-bg);
-            color: var(--code-text);
-            border-radius: 8px;
-            padding: 18px 20px;
-            margin: 12px 0;
-            font-size: 13px;
-            overflow-x: auto;
-            position: relative;
+            background: var(--code-bg); color: var(--code-text);
+            border-radius: 8px; padding: 18px 20px; margin: 12px 0;
+            font-size: 13px; overflow-x: auto; position: relative;
         }
-        /* pre จัดการ whitespace อย่างถูกต้อง */
         .code-block pre {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
-            line-height: 1.8;
-            white-space: pre;
-            overflow-x: auto;
+            font-size: 13px; line-height: 1.8;
+            white-space: pre; overflow-x: auto;
         }
         .comment { color: #6c7086; }
         .keyword { color: #cba6f7; }
@@ -111,7 +113,6 @@
             position: absolute; top: 10px; right: 10px;
             background: #45475a; color: #cdd6f4; border: none;
             padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
-            z-index: 1;
         }
         .copy-btn:hover { background: #585b70; }
 
@@ -167,6 +168,89 @@
             border-radius: 3px; font-family: 'Courier New', monospace; font-size: 13px;
         }
 
+        /* ─── ✅ ส่วนตรวจสอบอัตโนมัติ (ขั้นตอนที่ 8) ─── */
+        .verify-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9; border-radius: 12px;
+            padding: 24px; margin: 20px 0;
+        }
+        .verify-box h3 {
+            color: #0369a1; margin-top: 0;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 17px;
+        }
+        .verify-input-group {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 12px; margin-bottom: 16px;
+        }
+        .verify-input-group label {
+            display: block; font-weight: 600; color: #334155;
+            margin-bottom: 6px; font-size: 13px;
+        }
+        .verify-input-group input {
+            width: 100%; padding: 10px 12px;
+            border: 2px solid #cbd5e1; border-radius: 8px;
+            font-size: 14px; font-family: 'Courier New', monospace;
+            transition: border-color 0.2s; box-sizing: border-box;
+        }
+        .verify-input-group input:focus { outline: none; border-color: #0ea5e9; }
+        .verify-btn {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white; border: none; padding: 13px 28px;
+            border-radius: 8px; font-size: 15px; font-weight: 700;
+            cursor: pointer; width: 100%; transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+        .verify-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+        .verify-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .verify-results { margin-top: 20px; display: none; }
+        .verify-results.show { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .verify-item {
+            display: flex; align-items: center;
+            padding: 12px 16px; margin-bottom: 8px;
+            background: white; border-radius: 8px;
+            border-left: 4px solid #cbd5e1; transition: all 0.3s;
+        }
+        .verify-item.success { border-left-color: #10b981; background: #f0fdf4; }
+        .verify-item.error   { border-left-color: #ef4444; background: #fef2f2; }
+        .verify-item.checking { border-left-color: #f59e0b; background: #fffbeb; }
+        .verify-icon { font-size: 22px; margin-right: 12px; min-width: 30px; text-align: center; }
+        .verify-text { flex: 1; }
+        .verify-text strong { display: block; color: #1e293b; margin-bottom: 2px; font-size: 14px; }
+        .verify-text small  { color: #64748b; font-size: 13px; }
+        .verify-summary {
+            margin-top: 16px; padding: 16px; border-radius: 8px;
+            font-weight: 700; text-align: center; font-size: 16px;
+            display: none;
+        }
+        .verify-summary.show    { display: block; animation: fadeIn 0.4s ease-out; }
+        .verify-summary.success { background: #10b981; color: white; }
+        .verify-summary.error   { background: #ef4444; color: white; }
+
+        /* ─── ✅ Dashboard guide (ขั้นตอนที่ 9) ─── */
+        .dashboard-guide {
+            background: #f0fdf4; border: 2px solid #16a34a;
+            border-radius: 12px; padding: 24px; margin: 16px 0;
+        }
+        .dashboard-guide h3 { color: #14532d; margin-top: 0; font-size: 16px; }
+        .room-add-preview {
+            background: white; border: 1px solid #d1fae5;
+            border-radius: 8px; padding: 16px; margin: 12px 0;
+            font-size: 14px; color: #374151;
+        }
+        .room-add-preview .btn-preview {
+            display: inline-block; background: #2b579a; color: white;
+            padding: 8px 18px; border-radius: 6px; font-weight: bold;
+            font-size: 14px; margin: 6px 0;
+        }
+
         /* ─── Responsive ─── */
         @media (max-width: 768px) {
             .page-wrapper { flex-direction: column; }
@@ -174,6 +258,7 @@
             .sidebar-sticky { position: static; }
             .progress-step { font-size: 11px; padding: 10px 4px; }
             .progress-step .step-num { font-size: 16px; }
+            .verify-input-group { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -191,7 +276,7 @@
         <div class="sidebar-sticky">
             <h3>เนื้อหา</h3>
             <ul>
-                <li><a href="#overview"      class="active">🗺️ ภาพรวม</a></li>
+                <li><a href="#overview"       class="active">🗺️ ภาพรวม</a></li>
                 <li><a href="#register"              >1. สมัคร Supabase</a></li>
                 <li><a href="#create-project"        >2. สร้าง Project</a></li>
                 <li><a href="#create-table"          >3. สร้างตาราง</a></li>
@@ -199,6 +284,8 @@
                 <li><a href="#create-user"           >5. สร้าง User</a></li>
                 <li><a href="#get-keys"              >6. ดึง URL & Key</a></li>
                 <li><a href="#fill-config"           >7. กรอกข้อมูล</a></li>
+                <li><a href="#verify"    class="new-step">8. ✅ ตรวจสอบ</a></li>
+                <li><a href="#add-rooms" class="new-step">9. 🏠 เพิ่มห้อง</a></li>
                 <li><a href="#troubleshoot"          >🔧 แก้ปัญหา</a></li>
             </ul>
         </div>
@@ -215,12 +302,14 @@
             <div class="progress-step"><span class="step-num">5️⃣</span>สร้าง User</div>
             <div class="progress-step"><span class="step-num">6️⃣</span>ดึง Key</div>
             <div class="progress-step"><span class="step-num">7️⃣</span>กรอกข้อมูล</div>
+            <div class="progress-step"><span class="step-num">8️⃣</span>ตรวจสอบ</div>
+            <div class="progress-step"><span class="step-num">9️⃣</span>เพิ่มห้อง</div>
         </div>
 
         <!-- ─── Section 0: Overview ─── -->
         <div class="section" id="overview">
             <h2>🗺️ ภาพรวมระบบ</h2>
-            <p>ระบบนี้ใช้ <strong>Supabase</strong> เป็นฐานข้อมูลบนคลาวด์ฟรี เก็บข้อมูลบิลค่าเช่าห้อง รองรับการ Login ด้วย Email/Password และมีระบบป้องกันข้อมูลด้วย Row Level Security (RLS)</p>
+            <p>ระบบนี้ใช้ <strong>Supabase</strong> เป็นฐานข้อมูลบนคลาวด์ฟรี เก็บข้อมูลใบเสร็จค่าเช่าห้องและข้อมูลผู้เช่า รองรับการ Login ด้วย Email/Password และมีระบบป้องกันข้อมูลด้วย Row Level Security (RLS)</p>
             <div class="alert alert-info">
                 <span class="alert-icon">💡</span>
                 <div>Supabase มีแพลนฟรี (Free Tier) รองรับฐานข้อมูล 500MB เพียงพอสำหรับการจัดการห้องเช่าขนาดเล็ก-กลาง</div>
@@ -232,7 +321,8 @@
                 <tbody>
                     <tr><td>บัญชี Supabase</td><td>สมัครด้วย Email หรือ GitHub</td><td><span class="badge badge-green">ฟรี</span></td></tr>
                     <tr><td>Supabase Project</td><td>1 Project ต่อหอพัก</td><td><span class="badge badge-green">ฟรี</span></td></tr>
-                    <tr><td>ตาราง room_records</td><td>เก็บข้อมูลบิลทั้งหมด</td><td><span class="badge badge-green">ฟรี</span></td></tr>
+                    <tr><td>ตาราง <code class="inline">room_records</code></td><td>เก็บประวัติบิลทั้งหมด</td><td><span class="badge badge-green">ฟรี</span></td></tr>
+                    <tr><td>ตาราง <code class="inline">rooms_data</code></td><td>เก็บข้อมูลห้องและผู้เช่า</td><td><span class="badge badge-green">ฟรี</span></td></tr>
                     <tr><td>Supabase Auth User</td><td>บัญชีสำหรับ Login</td><td><span class="badge badge-green">ฟรี</span></td></tr>
                 </tbody>
             </table>
@@ -242,24 +332,9 @@
         <div class="section" id="register">
             <h2>1️⃣ สมัครบัญชี Supabase</h2>
             <ol class="steps">
-                <li>
-                    <div class="step-body">
-                        <strong>เปิดเว็บไซต์ Supabase</strong>
-                        <p>ไปที่ <a href="https://supabase.com" target="_blank" style="color:var(--primary)">supabase.com</a> แล้วคลิกปุ่ม <strong>"Start your project"</strong> หรือ <strong>"Sign Up"</strong></p>
-                    </div>
-                </li>
-                <li>
-                    <div class="step-body">
-                        <strong>เลือกวิธีสมัคร</strong>
-                        <p>แนะนำสมัครด้วย <strong>GitHub</strong> (ง่ายที่สุด) หรือใช้ Email ธรรมดาก็ได้</p>
-                    </div>
-                </li>
-                <li>
-                    <div class="step-body">
-                        <strong>ยืนยันอีเมล</strong>
-                        <p>ถ้าสมัครด้วย Email จะมีลิงก์ยืนยันส่งมาให้ กดยืนยันก่อนเข้าใช้งาน</p>
-                    </div>
-                </li>
+                <li><div class="step-body"><strong>เปิดเว็บไซต์ Supabase</strong><p>ไปที่ <a href="https://supabase.com" target="_blank" style="color:var(--primary)">supabase.com</a> แล้วคลิกปุ่ม <strong>"Start your project"</strong> หรือ <strong>"Sign Up"</strong></p></div></li>
+                <li><div class="step-body"><strong>เลือกวิธีสมัคร</strong><p>แนะนำสมัครด้วย <strong>GitHub</strong> (ง่ายที่สุด) หรือใช้ Email ธรรมดาก็ได้</p></div></li>
+                <li><div class="step-body"><strong>ยืนยันอีเมล</strong><p>ถ้าสมัครด้วย Email จะมีลิงก์ยืนยันส่งมาให้ กดยืนยันก่อนเข้าใช้งาน</p></div></li>
             </ol>
         </div>
 
@@ -275,27 +350,19 @@
             </ol>
             <div class="alert alert-warning">
                 <span class="alert-icon">⚠️</span>
-                <div>Free Tier ของ Supabase สร้างได้ <strong>2 Projects ต่อ 1 บัญชี</strong></div>
-            </div>
-            <div class="alert alert-info">
-                <span class="alert-icon">💡</span>
-                <div><strong>อย่าสับสน:</strong> "Database Password" ที่ตั้งในขั้นตอนนี้ <u>ไม่ใช่</u> รหัสผ่านที่ใช้ Login เข้าเว็บออกบิล รหัสผ่านสำหรับ Login จะตั้งทีหลังในขั้นตอนที่ 5</div>
+                <div>Free Tier ของ Supabase สร้างได้ <strong>2 Projects ต่อ 1 บัญชี</strong> — และ <strong>"Database Password"</strong> ที่ตั้งในขั้นตอนนี้ <u>ไม่ใช่</u> รหัสผ่านที่ใช้ Login เข้าเว็บออกใบเสร็จ</div>
             </div>
         </div>
 
         <!-- ─── Section 3: Create Table ─── -->
         <div class="section" id="create-table">
             <h2>3️⃣ สร้างตารางเก็บข้อมูล</h2>
-            <p>ไปที่เมนู <strong>SQL Editor</strong> ทางซ้ายมือ แล้วรัน SQL ด้านล่างนี้</p>
-            <div class="alert alert-info">
-                <span class="alert-icon">📋</span>
-                <div>คัดลอก SQL ทั้งหมดด้านล่าง วางในช่อง SQL Editor แล้วกดปุ่ม <strong>"Run"</strong> (หรือ Ctrl+Enter)</div>
-            </div>
+            <p>ไปที่เมนู <strong>SQL Editor</strong> ทางซ้ายมือ แล้วรัน SQL ด้านล่างนี้ ต้องรัน <strong>2 ส่วน</strong> แยกกัน</p>
 
-            <!-- ใช้ data-code attribute เก็บโค้ดที่แท้จริง แยกจาก HTML ที่ใช้แสดงผล -->
-            <div class="code-block" id="sqlCode">
-                <button class="copy-btn" onclick="copyCode('sqlCode')">📋 Copy</button>
-                <pre><span class="comment">-- สร้างตารางหลักสำหรับเก็บข้อมูลบิลทั้งหมด</span>
+            <h3 style="color:var(--primary); margin-top:20px;">ส่วนที่ 1 — ตาราง room_records (เก็บประวัติบิล)</h3>
+            <div class="code-block" id="sqlCode1">
+                <button class="copy-btn" onclick="copyCode('sqlCode1')">📋 Copy</button>
+                <pre><span class="comment">-- ตารางเก็บประวัติใบเสร็จทั้งหมด</span>
 <span class="keyword">CREATE TABLE</span> <span class="type">room_records</span> (
     id            <span class="type">bigint</span>        <span class="keyword">GENERATED ALWAYS AS IDENTITY PRIMARY KEY</span>,
     timestamp     <span class="type">timestamptz</span>   <span class="keyword">DEFAULT</span> <span class="value">now()</span>,
@@ -316,42 +383,51 @@
 );</pre>
             </div>
 
-            <div class="alert alert-success">
-                <span class="alert-icon">✅</span>
-                <div>ถ้ารันสำเร็จจะเห็นข้อความ <strong>"Success. No rows returned"</strong> ที่ด้านล่าง</div>
+            <h3 style="color:var(--primary); margin-top:24px;">ส่วนที่ 2 — ตาราง rooms_data (เก็บข้อมูลห้องและผู้เช่า)</h3>
+            <div class="code-block" id="sqlCode2">
+                <button class="copy-btn" onclick="copyCode('sqlCode2')">📋 Copy</button>
+                <pre><span class="comment">-- ตารางเก็บข้อมูลห้องและผู้เช่าปัจจุบัน</span>
+<span class="keyword">CREATE TABLE</span> <span class="type">rooms_data</span> (
+    id            <span class="type">bigint</span>        <span class="keyword">GENERATED ALWAYS AS IDENTITY PRIMARY KEY</span>,
+    room_number   <span class="type">text</span>          <span class="keyword">NOT NULL</span>,
+    tenant_name   <span class="type">text</span>,
+    phone         <span class="type">text</span>,
+    deposit       <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    base_rent     <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    fine          <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    paid_status   <span class="type">boolean</span>       <span class="keyword">DEFAULT</span> <span class="value">false</span>,
+    last_total    <span class="type">float4</span>,
+    last_month    <span class="type">text</span>,
+    last_water    <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    last_elec     <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>
+);</pre>
             </div>
 
-            <table class="info-table">
-                <thead>
-                    <tr><th>Column</th><th>ประเภท</th><th>หน้าที่</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>id</td><td><span class="badge badge-blue">bigint</span></td><td>รหัสอ้างอิง (Auto)</td></tr>
-                    <tr><td>timestamp</td><td><span class="badge badge-blue">timestamptz</span></td><td>วันเวลาที่บันทึก (Auto)</td></tr>
-                    <tr><td>month</td><td><span class="badge badge-orange">text</span></td><td>วันที่ออกบิล</td></tr>
-                    <tr><td>room</td><td><span class="badge badge-orange">text</span></td><td>หมายเลขห้อง</td></tr>
-                    <tr><td>water_before / water_after</td><td><span class="badge badge-blue">float4</span></td><td>เลขมิเตอร์น้ำก่อน/หลัง</td></tr>
-                    <tr><td>elec_before / elec_after</td><td><span class="badge badge-blue">float4</span></td><td>เลขมิเตอร์ไฟก่อน/หลัง</td></tr>
-                    <tr><td>grand_total</td><td><span class="badge badge-blue">float4</span></td><td>ยอดรวมสุทธิ</td></tr>
-                </tbody>
-            </table>
+            <div class="alert alert-success">
+                <span class="alert-icon">✅</span>
+                <div>ถ้ารันสำเร็จจะเห็นข้อความ <strong>"Success. No rows returned"</strong> ที่ด้านล่าง — ต้องรันทั้ง 2 ส่วน แต่ละส่วนแยกกัน</div>
+            </div>
+            <div class="alert alert-info">
+                <span class="alert-icon">📌</span>
+                <div><strong>room_number ในตาราง rooms_data เป็น text</strong> รองรับทั้งตัวเลข (1, 2, 10) และตัวอักษรผสม (A1, B2, 201) ได้สูงสุด 5 ตัวอักษร</div>
+            </div>
         </div>
 
         <!-- ─── Section 4: RLS ─── -->
         <div class="section" id="rls">
             <h2>4️⃣ ตั้งค่า Row Level Security (RLS)</h2>
-            <p>RLS คือระบบป้องกันข้อมูล ทำให้เฉพาะผู้ที่ Login แล้วเท่านั้นที่เข้าถึงข้อมูลได้ รันใน SQL Editor ต่อจากขั้นตอนที่ 3</p>
-
+            <p>RLS คือระบบป้องกันข้อมูล ทำให้เฉพาะผู้ที่ Login แล้วเท่านั้นที่เข้าถึงข้อมูลได้ ต้องรันกับ <strong>ทั้ง 2 ตาราง</strong></p>
             <div class="code-block" id="rlsCode">
                 <button class="copy-btn" onclick="copyCode('rlsCode')">📋 Copy</button>
-                <pre><span class="comment">-- เปิดใช้งาน RLS</span>
+                <pre><span class="comment">-- เปิด RLS และตั้ง Policy สำหรับทั้ง 2 ตาราง</span>
 <span class="keyword">ALTER TABLE</span> <span class="type">room_records</span> <span class="keyword">ENABLE ROW LEVEL SECURITY</span>;
-
-<span class="comment">-- อนุญาตเฉพาะผู้ที่ Login แล้วเท่านั้น</span>
 <span class="keyword">CREATE POLICY</span> <span class="string">"auth_users_only"</span> <span class="keyword">ON</span> <span class="type">room_records</span>
+<span class="keyword">FOR ALL USING</span> (auth.role() = <span class="string">'authenticated'</span>);
+
+<span class="keyword">ALTER TABLE</span> <span class="type">rooms_data</span> <span class="keyword">ENABLE ROW LEVEL SECURITY</span>;
+<span class="keyword">CREATE POLICY</span> <span class="string">"auth_users_only"</span> <span class="keyword">ON</span> <span class="type">rooms_data</span>
 <span class="keyword">FOR ALL USING</span> (auth.role() = <span class="string">'authenticated'</span>);</pre>
             </div>
-
             <div class="alert alert-danger">
                 <span class="alert-icon">🔒</span>
                 <div>ถ้าไม่รัน SQL ส่วนนี้ ข้อมูลในฐานข้อมูลจะเป็น <strong>Public</strong> ทุกคนสามารถอ่านและแก้ไขได้ กรุณารันทุกครั้ง</div>
@@ -361,93 +437,151 @@
         <!-- ─── Section 5: Create User ─── -->
         <div class="section" id="create-user">
             <h2>5️⃣ สร้างบัญชีผู้ใช้สำหรับ Login</h2>
-            <p>บัญชีนี้คือ <strong>Email/Password ที่จะใช้ Login เข้าเว็บออกบิล</strong> (ไม่เกี่ยวกับบัญชี Supabase ที่สมัครไว้ในขั้นตอนที่ 1)</p>
+            <p>บัญชีนี้คือ <strong>Email/Password ที่จะใช้ Login เข้าเว็บออกใบเสร็จ</strong> (ไม่เกี่ยวกับบัญชี Supabase ที่สมัครไว้ในขั้นตอนที่ 1)</p>
             <ol class="steps">
                 <li><div class="step-body"><strong>ไปที่เมนู Authentication</strong><p>คลิกที่ไอคอน 🔑 <strong>Authentication</strong> ในเมนูซ้ายมือ</p></div></li>
                 <li><div class="step-body"><strong>คลิก "Users" → "Add user" → "Create new user"</strong></div></li>
-                <li><div class="step-body"><strong>กรอก Email และ Password</strong><p>ใส่อีเมลและรหัสผ่านที่ต้องการใช้ Login เข้าเว็บออกบิล (จดไว้กันลืม)</p></div></li>
-                <li><div class="step-body"><strong>เปิด "Auto Confirm User" ✅</strong><p>เปิดสวิตช์ <strong>"Auto Confirm User"</strong> ด้วย เพื่อให้ Login ได้ทันทีโดยไม่ต้องกดยืนยันอีเมล</p></div></li>
+                <li><div class="step-body"><strong>กรอก Email และ Password</strong><p>ใส่อีเมลและรหัสผ่านที่ต้องการใช้ Login (จดไว้กันลืม)</p></div></li>
+                <li><div class="step-body"><strong>เปิด "Auto Confirm User" ✅</strong><p>เปิดสวิตช์นี้ด้วย เพื่อให้ Login ได้ทันทีโดยไม่ต้องกดยืนยันอีเมล</p></div></li>
                 <li><div class="step-body"><strong>คลิก "Create user"</strong></div></li>
             </ol>
             <div class="alert alert-info">
                 <span class="alert-icon">👥</span>
-                <div>ถ้ามีหลายคนช่วยกันออกบิล สามารถทำซ้ำขั้นตอนนี้เพื่อสร้างหลายบัญชีได้ ทุกคนจะเห็นข้อมูลห้องเดียวกันหมด</div>
+                <div>ถ้ามีหลายคนช่วยกันออกใบเสร็จ สามารถทำซ้ำขั้นตอนนี้เพื่อสร้างหลายบัญชีได้ ทุกคนจะเห็นข้อมูลห้องเดียวกันหมด</div>
             </div>
         </div>
 
         <!-- ─── Section 6: Get URL & Key ─── -->
         <div class="section" id="get-keys">
             <h2>6️⃣ ดึง API URL และ Anon Key</h2>
-            <p>ค่า 2 อย่างนี้คือ "กุญแจ" ที่ใช้เชื่อมเว็บออกบิลเข้ากับฐานข้อมูลของคุณ ตำแหน่งของทั้งสองค่านี้ <strong>อยู่คนละหน้ากัน</strong> ให้ทำตามขั้นตอนด้านล่าง</p>
-            <div class="alert alert-warning">
-                <span class="alert-icon">⚠️</span>
-                <div>Supabase ได้ย้ายตำแหน่งของ API URL และ Anon Key ออกจากกัน ต้องเข้าไปคนละเมนู อ่านให้ครบก่อนทำ</div>
-            </div>
+            <p>ค่า 2 อย่างนี้คือ "กุญแจ" ที่ใช้เชื่อมเว็บออกใบเสร็จเข้ากับฐานข้อมูลของคุณ ทั้งสองค่านี้ <strong>อยู่คนละหน้ากัน</strong></p>
 
-            <!-- 6A -->
-            <h3 style="color:#2b579a;margin:20px 0 10px 0;">📡 6A — หา API URL</h3>
-            <p>เข้าไปตามเส้นทางนี้:</p>
-            <div class="path-box">
-                ⚙️ Project Settings <span class="arr">›</span> Integrations <span class="arr">›</span> Data API
-            </div>
-            <p style="margin-top:10px;">ในหน้า <strong>Data API</strong> จะเห็นหัวข้อ <strong>"Project URL"</strong> คัดลอกค่าที่ขึ้นต้นด้วย <code class="inline">https://</code> และปิดท้ายด้วย <code class="inline">.supabase.co</code></p>
+            <h3 style="color:var(--primary); margin:20px 0 10px 0;">📡 6A — หา API URL</h3>
+            <div class="path-box">⚙️ Project Settings <span class="arr">›</span> Integrations <span class="arr">›</span> Data API</div>
+            <p style="margin-top:10px;">ในหน้า <strong>Data API</strong> คัดลอกค่าใต้หัวข้อ <strong>"Project URL"</strong></p>
             <div class="alert alert-danger">
                 <span class="alert-icon">🚫</span>
                 <div>
-                    <strong>สำคัญมาก — ใช้เฉพาะ URL หลักเท่านั้น!</strong><br>
                     ✅ ถูกต้อง: <code class="inline">https://xxxxxxxxxxxxxxxx.supabase.co</code><br>
                     ❌ ผิด: <code class="inline">https://xxxxxxxxxxxxxxxx.supabase.co/rest/v1/</code><br>
-                    ❌ ผิด: <code class="inline">https://xxxxxxxxxxxxxxxx.supabase.co/</code> (มี / ปิดท้าย)<br><br>
-                    ต้องตัด <code class="inline">/rest/v1/</code> ออก และ<strong>ห้ามมี "/" ปิดท้าย</strong>
+                    ❌ ผิด: <code class="inline">https://xxxxxxxxxxxxxxxx.supabase.co/</code> (มี / ปิดท้าย)
                 </div>
             </div>
 
-            <!-- 6B -->
-            <h3 style="color:#2b579a;margin:20px 0 10px 0;">🔑 6B — หา Anon Key</h3>
-            <p>เข้าไปตามเส้นทางนี้:</p>
-            <div class="path-box">
-                ⚙️ Project Settings <span class="arr">›</span> API Keys <span class="arr">›</span> แท็บ "Legacy anon, service_role API keys"
-            </div>
-            <p style="margin-top:10px;">ในแท็บ <strong>"Legacy anon, service_role API keys"</strong> จะเห็นคีย์ 2 ตัว ให้คัดลอกเฉพาะคีย์ที่ชื่อ <strong>"anon"</strong> (public) เท่านั้น เป็นค่าตัวยาวที่ขึ้นต้นด้วย <code class="inline">eyJ...</code></p>
+            <h3 style="color:var(--primary); margin:20px 0 10px 0;">🔑 6B — หา Anon Key</h3>
+            <div class="path-box">⚙️ Project Settings <span class="arr">›</span> API Keys <span class="arr">›</span> แท็บ "Legacy anon, service_role API keys"</div>
+            <p style="margin-top:10px;">คัดลอกคีย์ที่ชื่อ <strong>"anon"</strong> (public) เท่านั้น ขึ้นต้นด้วย <code class="inline">eyJ...</code></p>
             <div class="alert alert-danger">
                 <span class="alert-icon">🚫</span>
-                <div>ห้ามใช้คีย์ที่ชื่อ <strong>"service_role"</strong> เด็ดขาด! คีย์นี้สามารถข้าม RLS และเข้าถึงข้อมูลทั้งหมดได้ ให้ใช้แค่คีย์ <strong>"anon"</strong> เท่านั้น</div>
-            </div>
-            <div class="alert alert-success" style="margin-top:16px;">
-                <span class="alert-icon">✅</span>
-                <div>
-                    สรุปค่าที่ต้องเก็บไว้:<br>
-                    <strong>API URL</strong> → มาจาก Project Settings › Integrations › Data API<br>
-                    <strong>Anon Key</strong> → มาจาก Project Settings › API Keys › แท็บ "Legacy anon, service_role API keys"
-                </div>
+                <div>ห้ามใช้คีย์ที่ชื่อ <strong>"service_role"</strong> เด็ดขาด! ให้ใช้แค่คีย์ <strong>"anon"</strong> เท่านั้น</div>
             </div>
         </div>
 
         <!-- ─── Section 7: Fill Config ─── -->
         <div class="section" id="fill-config">
-            <h2>7️⃣ กรอกข้อมูลเข้าเว็บออกบิล</h2>
-            <p>ขั้นตอนสุดท้าย นำค่าที่ได้จากขั้นตอนที่ 6 มากรอกในเว็บออกบิล</p>
+            <h2>7️⃣ กรอกข้อมูลเข้าเว็บออกใบเสร็จ</h2>
+            <p>นำค่าที่ได้จากขั้นตอนที่ 6 มากรอกในเว็บออกใบเสร็จ</p>
             <ol class="steps">
-                <li><div class="step-body"><strong>เปิดเว็บออกบิล (index.html)</strong><p>จะเจอหน้า Login</p></div></li>
+                <li><div class="step-body"><strong>เปิดเว็บออกใบเสร็จ (index.html)</strong><p>จะเจอหน้า Login</p></div></li>
                 <li><div class="step-body"><strong>คลิก "⚙️ ตั้งค่าฐานข้อมูล Supabase ของฉัน (สำหรับผู้ใช้ใหม่)"</strong><p>ปุ่มนี้อยู่ด้านล่างของหน้า Login ไม่ต้อง Login ก่อนก็กดได้</p></div></li>
                 <li><div class="step-body"><strong>วาง Supabase URL และ Anon Key</strong><p>นำค่าที่ได้จากขั้นตอน 6A และ 6B มาวางในช่องที่ตรงกัน</p></div></li>
-                <li>
-                    <div class="step-body">
-                        <strong>ตรวจสอบ URL ก่อนบันทึก</strong>
-                        <p>ย้ำอีกครั้ง: URL ต้องเป็น <code class="inline">https://xxxxxxxxxxxxxxxx.supabase.co</code> เท่านั้น — ไม่มี <code class="inline">/rest/v1/</code> และไม่มี <code class="inline">/</code> ปิดท้าย</p>
-                    </div>
-                </li>
-                <li><div class="step-body"><strong>กำหนดจำนวนห้องทั้งหมด</strong><p>ใส่จำนวนห้องของหอพักคุณ (ค่าเริ่มต้น 10) ปรับเพิ่ม/ลดทีหลังได้ที่แท็บ "ตั้งค่าระบบ"</p></div></li>
+                <li><div class="step-body"><strong>ตรวจสอบ URL ก่อนบันทึก</strong><p>URL ต้องเป็น <code class="inline">https://xxxxxxxxxxxxxxxx.supabase.co</code> — ไม่มี <code class="inline">/rest/v1/</code> และไม่มี <code class="inline">/</code> ปิดท้าย</p></div></li>
                 <li><div class="step-body"><strong>กด "บันทึกและกลับไปเข้าสู่ระบบ"</strong><p>ระบบจะพากลับไปหน้า Login อัตโนมัติ</p></div></li>
-                <li><div class="step-body"><strong>Login ด้วย Email/Password จากขั้นตอนที่ 5</strong><p>เข้าสู่ระบบสำเร็จ พร้อมใช้งานได้ทันที 🎉</p></div></li>
+                <li><div class="step-body"><strong>Login ด้วย Email/Password จากขั้นตอนที่ 5</strong><p>เข้าสู่ระบบสำเร็จ จากนั้นไปทำขั้นตอนที่ 8 และ 9 ต่อได้เลย 🎉</p></div></li>
             </ol>
-            <div class="alert alert-success">
-                <span class="alert-icon">✅</span>
-                <div>เสร็จแล้ว! ค่าที่กรอกจะถูกจดจำไว้ในเบราว์เซอร์นี้ ครั้งต่อไปเปิดเว็บมาจะ Login ได้เลยโดยไม่ต้องตั้งค่าซ้ำ</div>
-            </div>
             <div class="alert alert-warning">
                 <span class="alert-icon">📱</span>
                 <div>ถ้าเปลี่ยนไปใช้เครื่องอื่น หรือเบราว์เซอร์อื่น จะต้องทำขั้นตอนนี้ใหม่ เพราะการตั้งค่าเก็บแยกตามเบราว์เซอร์</div>
+            </div>
+        </div>
+
+        <!-- ─── Section 8: Verify ✅ (ใหม่) ─── -->
+        <div class="section" id="verify">
+            <h2>8️⃣ ตรวจสอบความถูกต้องอัตโนมัติ</h2>
+            <p>หลังจากตั้งค่าเสร็จแล้ว ให้ตรวจสอบว่าทุกอย่างทำงานถูกต้องก่อนเริ่มใช้งานจริง กรอกข้อมูลด้านล่างแล้วกดปุ่มตรวจสอบได้เลย</p>
+
+            <div class="verify-box">
+                <h3>🔍 ตรวจสอบการตั้งค่าอัตโนมัติ</h3>
+                <p style="color:#0369a1; font-size:14px; margin-bottom:16px;">ระบบจะดึงค่า URL และ Key ที่เคยบันทึกไว้ในเบราว์เซอร์มาให้อัตโนมัติ (ถ้ามี)</p>
+
+                <div class="verify-input-group">
+                    <div>
+                        <label>📡 Supabase URL</label>
+                        <input type="text" id="verifyUrl" placeholder="https://xxxxxxxx.supabase.co">
+                    </div>
+                    <div>
+                        <label>🔑 Anon Key</label>
+                        <input type="text" id="verifyKey" placeholder="eyJhbGciOi...">
+                    </div>
+                </div>
+                <div class="verify-input-group">
+                    <div>
+                        <label>📧 Email (สำหรับ Login)</label>
+                        <input type="email" id="verifyEmail" placeholder="your@email.com">
+                    </div>
+                    <div>
+                        <label>🔒 Password</label>
+                        <input type="password" id="verifyPassword" placeholder="รหัสผ่านที่ตั้งไว้ในขั้นตอนที่ 5">
+                    </div>
+                </div>
+
+                <button class="verify-btn" id="verifyBtn" onclick="runVerification()">
+                    🚀 เริ่มตรวจสอบอัตโนมัติ
+                </button>
+
+                <div class="verify-results" id="verifyResults">
+                    <h4 style="margin-top:20px; color:#0369a1;">📊 ผลการตรวจสอบ:</h4>
+                    <div id="verifyItems"></div>
+                    <div class="verify-summary" id="verifySummary"></div>
+                </div>
+            </div>
+
+            <table class="info-table" style="margin-top:16px;">
+                <thead>
+                    <tr><th>รายการตรวจสอบ</th><th>สิ่งที่ตรวจสอบ</th><th>ถ้าไม่ผ่าน</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>📡 การเชื่อมต่อ Supabase</td><td>URL และ Key ถูกต้องไหม</td><td>กลับไปทำขั้นตอนที่ 6 ใหม่</td></tr>
+                    <tr><td>📋 ตาราง room_records</td><td>มีตารางนี้ในฐานข้อมูลไหม</td><td>รัน SQL ส่วนที่ 1 ในขั้นตอนที่ 3</td></tr>
+                    <tr><td>🏠 ตาราง rooms_data</td><td>มีตารางนี้ในฐานข้อมูลไหม</td><td>รัน SQL ส่วนที่ 2 ในขั้นตอนที่ 3</td></tr>
+                    <tr><td>🔒 Row Level Security</td><td>RLS เปิดใช้งานแล้วไหม</td><td>รัน SQL ในขั้นตอนที่ 4</td></tr>
+                    <tr><td>👤 บัญชีผู้ใช้</td><td>Email/Password ใช้ Login ได้ไหม</td><td>กลับไปสร้าง User ในขั้นตอนที่ 5</td></tr>
+                    <tr><td>🔐 สิทธิ์การเข้าถึง</td><td>หลัง Login แล้วอ่าน/เขียนข้อมูลได้ไหม</td><td>ตรวจสอบ Policy ในขั้นตอนที่ 4</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ─── Section 9: Add Rooms 🏠 (ใหม่) ─── -->
+        <div class="section" id="add-rooms">
+            <h2>9️⃣ เพิ่มห้องเช่าในระบบ</h2>
+            <p>หลังจากผ่านขั้นตอนที่ 8 แล้ว ระบบจะยังไม่มีห้องเช่าใดๆ เลย ต้องเพิ่มห้องเองใน <strong>Dashboard จัดการห้อง</strong></p>
+
+            <div class="dashboard-guide">
+                <h3>🏠 วิธีเพิ่มห้องเช่าใน Dashboard</h3>
+                <ol class="steps" style="margin-top:12px;">
+                    <li><div class="step-body"><strong>ไปที่หน้า Dashboard จัดการห้อง</strong><p>กดปุ่ม <strong>"🏠 Dashboard จัดการห้อง"</strong> ที่อยู่ใน header ด้านบนขวาของหน้าออกใบเสร็จ (หลัง login แล้ว)</p></div></li>
+                    <li><div class="step-body"><strong>กดปุ่ม "➕ เพิ่มห้องใหม่"</strong><p>ปุ่มนี้อยู่มุมบนขวาของหน้า Dashboard</p>
+                        <div class="room-add-preview">
+                            <span class="btn-preview">➕ เพิ่มห้องใหม่</span>
+                            <br><small style="color:#6b7280;">← ปุ่มนี้อยู่บน Dashboard</small>
+                        </div>
+                    </div></li>
+                    <li><div class="step-body"><strong>กรอกเลขห้องและค่าเช่าเริ่มต้น</strong><p>ระบบจะแนะนำเลขห้องถัดไปให้อัตโนมัติ แก้ไขได้ รองรับทั้งตัวเลข (1, 2, 10) และตัวอักษรผสม (A1, B2) สูงสุด 5 ตัวอักษร</p></div></li>
+                    <li><div class="step-body"><strong>กด "➕ เพิ่มห้อง" เพื่อบันทึก</strong><p>ห้องจะปรากฏในหน้า Dashboard ทันที ทำซ้ำขั้นตอนนี้เพื่อเพิ่มห้องทีละห้อง</p></div></li>
+                    <li><div class="step-body"><strong>กรอกรายละเอียดห้องเพิ่มเติม (ถ้ามี)</strong><p>คลิกที่การ์ดห้องเพื่อเปิด Modal แก้ไข สามารถเพิ่มชื่อผู้เช่า เบอร์โทร เงินมัดจำ และอื่นๆ ได้ภายหลัง</p></div></li>
+                </ol>
+            </div>
+
+            <div class="alert alert-info">
+                <span class="alert-icon">💡</span>
+                <div>
+                    <strong>เพิ่มห้องแล้วกลับไปออกใบเสร็จได้เลย</strong> — หน้าออกใบเสร็จจะแสดงรายชื่อห้องที่คุณเพิ่มไว้ใน dropdown "ห้องที่" อัตโนมัติ ถ้าไม่เห็นให้กดปุ่ม <strong>"🔄 รีเฟรชห้อง"</strong> ที่แถบด้านบนของหน้าออกใบเสร็จ
+                </div>
+            </div>
+
+            <div class="alert alert-success">
+                <span class="alert-icon">🎉</span>
+                <div><strong>พร้อมใช้งานแล้ว!</strong> เมื่อเพิ่มห้องเสร็จแล้ว ระบบพร้อมออกใบเสร็จได้ทันที</div>
             </div>
         </div>
 
@@ -472,12 +606,12 @@
                     <tr>
                         <td>บันทึก/โหลดข้อมูลไม่ได้ (Failed to fetch)</td>
                         <td>URL ผิดรูปแบบ เช่น มี /rest/v1/ ต่อท้าย หรือมี / ปิดท้าย</td>
-                        <td>ไปที่แท็บ "ตั้งค่าระบบ" แก้ URL ให้เหลือแค่ <code class="inline">https://xxxx.supabase.co</code> โดยไม่มี / ปิดท้าย</td>
+                        <td>ไปที่หน้า Login กด "⚙️ ตั้งค่าฐานข้อมูล" แก้ URL ให้เหลือแค่ <code class="inline">https://xxxx.supabase.co</code></td>
                     </tr>
                     <tr>
-                        <td>จำนวนห้องในเมนูไม่ตรงกับห้องจริง</td>
-                        <td>ยังไม่ได้ปรับค่า "จำนวนห้องทั้งหมดในหอพัก"</td>
-                        <td>ไปที่แท็บ "ตั้งค่าระบบ" แก้ตัวเลขจำนวนห้อง เมนูจะอัปเดตอัตโนมัติ</td>
+                        <td>Dropdown "ห้องที่" ว่างเปล่า ไม่มีตัวเลือก</td>
+                        <td>ยังไม่ได้เพิ่มห้องในระบบ</td>
+                        <td>ไปที่ Dashboard จัดการห้อง กดปุ่ม "➕ เพิ่มห้องใหม่" แล้วกลับมากดปุ่ม "🔄 รีเฟรชห้อง"</td>
                     </tr>
                     <tr>
                         <td>เปิดเว็บจากเครื่อง/เบราว์เซอร์อื่นแล้วต้องตั้งค่าใหม่ทุกครั้ง</td>
@@ -487,13 +621,18 @@
                     <tr>
                         <td>หา Anon Key ไม่เจอ</td>
                         <td>เข้าผิดเมนู หรือยังไม่ได้คลิกแท็บที่ถูกต้อง</td>
-                        <td>ไปที่ Project Settings › API Keys แล้วคลิกแท็บ <strong>"Legacy anon, service_role API keys"</strong> จะเห็นคีย์ anon ในนั้น</td>
+                        <td>ไปที่ Project Settings › API Keys แล้วคลิกแท็บ <strong>"Legacy anon, service_role API keys"</strong></td>
+                    </tr>
+                    <tr>
+                        <td>ขั้นตอนที่ 8 แจ้งว่า "ไม่พบตาราง rooms_data"</td>
+                        <td>ยังไม่ได้รัน SQL ส่วนที่ 2 ในขั้นตอนที่ 3</td>
+                        <td>กลับไปรัน SQL ส่วนที่ 2 ในขั้นตอนที่ 3 แล้วกดตรวจสอบใหม่</td>
                     </tr>
                 </tbody>
             </table>
             <div class="alert alert-info">
                 <span class="alert-icon">💬</span>
-                <div>ถ้าทำตามทุกขั้นตอนแล้วยังติดปัญหา ลองปิด-เปิดเบราว์เซอร์ใหม่ หรือลองเปิดเว็บในโหมดไม่ระบุตัวตน (Incognito) เพื่อตัดปัญหาเรื่องการตั้งค่าเก่าค้างอยู่</div>
+                <div>ถ้าทำตามทุกขั้นตอนแล้วยังติดปัญหา ให้ใช้ <strong>ขั้นตอนที่ 8 ตรวจสอบอัตโนมัติ</strong> เพื่อดูว่าปัญหาอยู่ตรงไหน หรือลองเปิดเว็บในโหมดไม่ระบุตัวตน (Incognito) เพื่อตัดปัญหาเรื่องการตั้งค่าเก่าค้างอยู่</div>
             </div>
         </div>
 
@@ -502,52 +641,206 @@
 
 <script>
 (function () {
-    /**
-     * copyCode — คัดลอกข้อความจาก <pre> ภายใน code block
-     * วิธีนี้ดึง innerText จาก <pre> โดยตรง
-     * จากนั้น trim() เพื่อตัด whitespace นำหน้า/ท้าย
-     */
-    function copyCode(elementId) {
+
+    /* ─── คัดลอก SQL ─── */
+    window.copyCode = function (elementId) {
         const block = document.getElementById(elementId);
         const pre   = block.querySelector('pre');
-
         if (!pre) return;
-
-        // innerText ของ <pre> จะรักษา newline ตามที่เป็นจริง
-        const rawText = pre.innerText;
-
-        // แยกเป็นบรรทัด → trim trailing space แต่ละบรรทัด → join กลับ
-        const cleanText = rawText
-            .split('\n')
-            .map(line => line.trimEnd())   // ตัด space ท้ายบรรทัด
-            .join('\n')
-            .trim();                        // ตัด newline นำหน้า/ท้ายทั้งหมด
-
+        const cleanText = pre.innerText.split('\n').map(l => l.trimEnd()).join('\n').trim();
         navigator.clipboard.writeText(cleanText).then(() => {
             const btn = block.querySelector('.copy-btn');
-            const original = btn.innerText;
+            const orig = btn.innerText;
             btn.innerText = '✅ คัดลอกแล้ว';
-            setTimeout(() => { btn.innerText = original; }, 1800);
+            setTimeout(() => { btn.innerText = orig; }, 1800);
         }).catch(() => {
-            // fallback สำหรับเบราว์เซอร์เก่า
             const ta = document.createElement('textarea');
-            ta.value = cleanText;
-            ta.style.position = 'fixed';
-            ta.style.opacity  = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
+            ta.value = cleanText; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select(); document.execCommand('copy');
             document.body.removeChild(ta);
             const btn = block.querySelector('.copy-btn');
             btn.innerText = '✅ คัดลอกแล้ว';
             setTimeout(() => { btn.innerText = '📋 Copy'; }, 1800);
         });
-    }
+    };
 
-    // expose ให้ inline onclick ใช้ได้
-    window.copyCode = copyCode;
+    /* ─── โหลดค่าจาก localStorage ─── */
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedUrl = localStorage.getItem('supabaseUrl') || '';
+        const savedKey = localStorage.getItem('supabaseKey') || '';
+        if (savedUrl) document.getElementById('verifyUrl').value = savedUrl;
+        if (savedKey) document.getElementById('verifyKey').value = savedKey;
+    });
 
-    // ─── Active sidebar highlight on scroll ───
+    /* ─── ตรวจสอบอัตโนมัติ (ขั้นตอนที่ 8) ─── */
+    window.runVerification = async function () {
+        const url      = document.getElementById('verifyUrl').value.trim();
+        const key      = document.getElementById('verifyKey').value.trim();
+        const email    = document.getElementById('verifyEmail').value.trim();
+        const password = document.getElementById('verifyPassword').value;
+
+        if (!url || !key || !email || !password) {
+            alert('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+            return;
+        }
+        if (!url.match(/^https:\/\/[a-z0-9]+\.supabase\.co$/i)) {
+            alert('⚠️ URL ผิดรูปแบบ!\n\nURL ต้องอยู่ในรูปแบบ:\nhttps://xxxxxxxx.supabase.co\n\nไม่มี /rest/v1/ และไม่มี / ปิดท้าย');
+            return;
+        }
+
+        const btn        = document.getElementById('verifyBtn');
+        const resultsDiv = document.getElementById('verifyResults');
+        const itemsDiv   = document.getElementById('verifyItems');
+        const summaryDiv = document.getElementById('verifySummary');
+
+        btn.disabled = true;
+        btn.innerText = '⏳ กำลังตรวจสอบ...';
+        resultsDiv.classList.add('show');
+        itemsDiv.innerHTML = '';
+        summaryDiv.classList.remove('show', 'success', 'error');
+
+        const checks = [
+            { id: 'conn',   name: '📡 การเชื่อมต่อ Supabase',   desc: 'ตรวจสอบ URL และ Anon Key' },
+            { id: 'table1', name: '📋 ตาราง room_records',       desc: 'ตรวจสอบว่ามีตารางนี้ในฐานข้อมูล' },
+            { id: 'table2', name: '🏠 ตาราง rooms_data',         desc: 'ตรวจสอบว่ามีตารางนี้ในฐานข้อมูล' },
+            { id: 'rls',    name: '🔒 Row Level Security',       desc: 'ตรวจสอบว่าเปิด RLS แล้ว' },
+            { id: 'auth',   name: '👤 บัญชีผู้ใช้',              desc: 'ตรวจสอบ Email/Password' },
+            { id: 'access', name: '🔐 สิทธิ์การเข้าถึงข้อมูล',  desc: 'ตรวจสอบการอ่าน/เขียนหลัง Login' }
+        ];
+
+        checks.forEach(c => {
+            itemsDiv.innerHTML += `
+                <div class="verify-item checking" id="check-${c.id}">
+                    <span class="verify-icon">⏳</span>
+                    <div class="verify-text">
+                        <strong>${c.name}</strong>
+                        <small>${c.desc}</small>
+                    </div>
+                </div>`;
+        });
+
+        let passCount = 0;
+
+        const updateCheck = (id, status, message) => {
+            const el = document.getElementById('check-' + id);
+            if (!el) return;
+            el.classList.remove('checking', 'success', 'error');
+            el.classList.add(status);
+            el.querySelector('.verify-icon').innerText = status === 'success' ? '✅' : '❌';
+            el.querySelector('small').innerText = message || (status === 'success' ? 'ผ่าน' : 'ไม่ผ่าน');
+            if (status === 'success') passCount++;
+        };
+
+        try {
+            // 1. ตรวจสอบการเชื่อมต่อ
+            let sb;
+            try {
+                sb = window.supabase.createClient(url, key);
+                await sb.from('room_records').select('id').limit(1);
+                updateCheck('conn', 'success', 'เชื่อมต่อสำเร็จ');
+            } catch (e) {
+                updateCheck('conn', 'error', 'เชื่อมต่อไม่ได้: ' + e.message);
+                throw new Error('CONNECTION_FAILED');
+            }
+
+            // 2. ตรวจสอบตาราง room_records
+            try {
+                const { error: e1 } = await sb.from('room_records').select('id').limit(1);
+                if (e1 && e1.message && e1.message.includes('does not exist')) {
+                    updateCheck('table1', 'error', 'ไม่พบตาราง — กรุณารัน SQL ส่วนที่ 1 ในขั้นตอนที่ 3');
+                } else {
+                    updateCheck('table1', 'success', 'พบตาราง room_records');
+                }
+            } catch (e) { updateCheck('table1', 'error', 'ตรวจสอบไม่ได้: ' + e.message); }
+
+            // 3. ตรวจสอบตาราง rooms_data
+            try {
+                const { error: e2 } = await sb.from('rooms_data').select('id').limit(1);
+                if (e2 && e2.message && e2.message.includes('does not exist')) {
+                    updateCheck('table2', 'error', 'ไม่พบตาราง — กรุณารัน SQL ส่วนที่ 2 ในขั้นตอนที่ 3');
+                } else {
+                    updateCheck('table2', 'success', 'พบตาราง rooms_data');
+                }
+            } catch (e) { updateCheck('table2', 'error', 'ตรวจสอบไม่ได้: ' + e.message); }
+
+            // 4. ตรวจสอบ RLS
+            try {
+                const anonSb = window.supabase.createClient(url, key);
+                const { error: rlsErr } = await anonSb.from('room_records').select('id').limit(1);
+                if (rlsErr && (rlsErr.code === 'PGRST301' || (rlsErr.message && rlsErr.message.includes('policy')) || rlsErr.status === 401)) {
+                    updateCheck('rls', 'success', 'RLS เปิดใช้งาน — ข้อมูลปลอดภัย');
+                } else if (!rlsErr) {
+                    updateCheck('rls', 'error', '⚠️ RLS อาจปิดอยู่ — ข้อมูลอาจเป็น Public! กรุณารัน SQL ในขั้นตอนที่ 4');
+                } else {
+                    updateCheck('rls', 'success', 'RLS เปิดใช้งาน');
+                }
+            } catch (e) { updateCheck('rls', 'error', 'ตรวจสอบไม่ได้: ' + e.message); }
+
+            // 5. ตรวจสอบ Login
+            let session = null;
+            try {
+                const { data, error: authErr } = await sb.auth.signInWithPassword({ email, password });
+                if (authErr) {
+                    updateCheck('auth', 'error', 'Login ไม่ได้: ' + authErr.message + ' — ตรวจสอบขั้นตอนที่ 5');
+                } else {
+                    session = data.session;
+                    updateCheck('auth', 'success', 'Login สำเร็จ');
+                }
+            } catch (e) { updateCheck('auth', 'error', 'Login ไม่ได้: ' + e.message); }
+
+            // 6. ตรวจสอบสิทธิ์การเข้าถึง
+            if (session) {
+                try {
+                    const { error: readErr } = await sb.from('room_records').select('id').limit(1);
+                    if (readErr) {
+                        updateCheck('access', 'error', 'อ่านข้อมูลไม่ได้: ' + readErr.message);
+                    } else {
+                        const testRoom = '__verify_test_' + Date.now();
+                        const { error: insertErr } = await sb
+                            .from('room_records')
+                            .insert({ room: testRoom, month: 'test' })
+                            .select('id').single();
+                        if (insertErr) {
+                            updateCheck('access', 'error', 'เขียนข้อมูลไม่ได้: ' + insertErr.message);
+                        } else {
+                            await sb.from('room_records').delete().eq('room', testRoom);
+                            updateCheck('access', 'success', 'อ่าน/เขียนข้อมูลได้ปกติ');
+                        }
+                    }
+                } catch (e) { updateCheck('access', 'error', 'ตรวจสอบไม่ได้: ' + e.message); }
+                await sb.auth.signOut();
+            } else {
+                updateCheck('access', 'error', 'ข้ามการตรวจสอบ — เพราะ Login ไม่ผ่าน');
+            }
+
+        } catch (e) {
+            if (e.message === 'CONNECTION_FAILED') {
+                ['table1', 'table2', 'rls', 'auth', 'access'].forEach(id => {
+                    const el = document.getElementById('check-' + id);
+                    if (el && el.classList.contains('checking')) {
+                        el.classList.remove('checking'); el.classList.add('error');
+                        el.querySelector('.verify-icon').innerText = '⏭️';
+                        el.querySelector('small').innerText = 'ข้าม — เพราะเชื่อมต่อไม่ได้';
+                    }
+                });
+            }
+        }
+
+        // สรุปผล
+        summaryDiv.classList.add('show');
+        if (passCount === checks.length) {
+            summaryDiv.classList.add('success');
+            summaryDiv.innerHTML = '🎉 ผ่านการตรวจสอบทุกรายการ! ไปทำขั้นตอนที่ 9 เพิ่มห้องได้เลย<br><small style="font-weight:normal;">กดปุ่ม "9️⃣ 🏠 เพิ่มห้อง" ในเมนูด้านซ้ายเพื่อดูวิธีการ</small>';
+        } else {
+            summaryDiv.classList.add('error');
+            summaryDiv.innerHTML = `⚠️ ผ่าน ${passCount} จาก ${checks.length} รายการ<br><small style="font-weight:normal;">กรุณาแก้ไขรายการที่ไม่ผ่านตามคำแนะนำ แล้วกดตรวจสอบใหม่อีกครั้ง</small>`;
+        }
+
+        btn.disabled = false;
+        btn.innerText = '🔄 ตรวจสอบใหม่อีกครั้ง';
+    };
+
+    /* ─── Active sidebar highlight on scroll ─── */
     const sections = document.querySelectorAll('.section');
     const links    = document.querySelectorAll('.sidebar ul li a');
 
@@ -557,14 +850,25 @@
             if (window.scrollY >= sec.offsetTop - 120) current = sec.id;
         });
         links.forEach(a => {
-            a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+            const isActive = a.getAttribute('href') === '#' + current;
+            // ถ้าเป็น new-step ให้คงคลาสนั้นไว้เสมอ เปลี่ยนแค่ active
+            if (isActive) {
+                a.classList.add('active');
+                a.classList.remove('new-step');
+            } else {
+                a.classList.remove('active');
+                // คืน new-step ให้ขั้นตอน 8 และ 9 ถ้าไม่ได้ active
+                if (a.getAttribute('href') === '#verify' || a.getAttribute('href') === '#add-rooms') {
+                    a.classList.add('new-step');
+                }
+            }
         });
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll(); // เรียกครั้งแรกเมื่อโหลดหน้า
+    onScroll();
+
 })();
 </script>
-
 </body>
 </html>

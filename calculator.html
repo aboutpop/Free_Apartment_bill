@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบออกบิลห้องพัก</title>
+    <!-- SEO Meta Tags -->
+    <title>โปรแกรมออกใบเสร็จห้องเช่า ฟรี! คำนวณค่าน้ำ-ค่าไฟ อัตโนมัติ (พิมพ์ผ่านเว็บได้เลย)</title>
+    <meta name="description" content="ระบบออกใบเสร็จห้องเช่าออนไลน์ฟรี ใช้งานง่ายไม่ต้องติดตั้งโปรแกรม ช่วยคำนวณค่าน้ำ ค่าไฟ ค่าเช่าห้องพัก อัตโนมัติ พิมพ์ใบเสร็จสวยงามได้ทันที เหมาะสำหรับเจ้าของหอพัก SME">
+    <meta name="keywords" content="ใบเสร็จห้องเช่าฟรี, โปรแกรมออกใบเสร็จหอพัก, คำนวณค่าน้ำค่าไฟห้องเช่า, ระบบจัดการห้องเช่า, ใบเสร็จรับเงินค่าเช่าออนไลน์, ออกบิลหอพัก, เครื่องมือคำนวณค่าไฟหอพัก">
+    
+    <!-- Open Graph (สำหรับแชร์ลง Social Media เช่น Facebook/Line) -->
+    <meta property="og:title" content="โปรแกรมออกใบเสร็จห้องเช่า ฟรี! - คำนวณค่าน้ำค่าไฟ อัตโนมัติ">
+    <meta property="og:description" content="ออกใบเสร็จค่าห้องพักได้ง่ายๆ ฟรี ไม่ต้องติดตั้งซอฟต์แวร์ คำนวณยอดค่าน้ำ-ค่าไฟ ให้อัตโนมัติ รองรับการพิมพ์และเซฟเป็น PDF">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://aboutpop.github.io/Apartment_bill/calculator.html">
+    <meta property="og:image" content="https://aboutpop.github.io/Apartment_bill/thumbnail.png"> <!-- แนะนำให้เพิ่มไฟล์รูปตัวอย่างหน้าเว็บที่นี่ เพื่อให้เวลาแชร์แล้วมีรูปโชว์ -->
+    <title>ระบบออกใบเสร็จและจัดการห้องเช่า สำหรับ SME</title>
     <link rel="stylesheet" href="shared-style.css">
     <script src="billing-calc.js"></script>
     <style>
@@ -105,7 +116,7 @@
 <div class="container">
 
     <div class="header-area">
-        <h2 data-i18n="heading">🏠 ระบบออกบิลห้องพัก (ไม่ต้องเข้าสู่ระบบ)</h2>
+        <h2 data-i18n="heading">🏠 ระบบออกใบเสร็จและจัดการห้องเช่า สำหรับ SME (ไม่ต้องเข้าสู่ระบบ)</h2>
         <div class="header-right">
             <a href="index.html" class="back-link" data-i18n="backLink">← กลับหน้าหลัก</a>
             <button class="lang-toggle-btn" id="langToggleBtn" onclick="toggleLanguage()">EN</button>
@@ -115,11 +126,11 @@
     <div class="tab-content-like">
         <div class="invoice-box" id="printArea">
             <div class="invoice-header">
-                <div class="invoice-title" data-i18n="receiptTitle">ใบเสร็จค่าเช่าห้องพัก</div>
+                <div class="invoice-title" data-i18n="receiptTitle">ใบเสร็จค่าห้องเช่า</div>
                 <div class="meta-grid">
                     <div class="meta-item">
-                        <label data-i18n="labelRoomName">ชื่อห้องพัก / เลขห้อง:</label>
-                        <input type="text" id="roomName" class="print-borderless" value="ห้องพัก">
+                        <label data-i18n="labelRoomName">ชื่อห้องเช่า / เลขห้อง:</label>
+                        <input type="text" id="roomName" class="print-borderless" value="ห้องเช่า">
                     </div>
                     <div class="meta-item">
                         <label data-i18n="labelDate">วันที่ออกใบเสร็จ:</label>
@@ -180,7 +191,7 @@
 
             <div class="invoice-footer">
                 <div class="account-row">
-                    <label data-i18n="accountLabel">เลขที่บัญชี / พร้อมเพย์สำหรับโอนเงิน:</label>
+                    <label data-i18n="accountLabel">บัญชีธนาคาร / พร้อมเพย์สำหรับโอนเงิน:</label>
                     <input type="text" id="accountNo" class="print-borderless" value="0000000">
                 </div>
                 <div class="signature-area">
@@ -201,13 +212,13 @@
 <script>
     const translations = {
         th: {
-            pageTitle: "ระบบออกบิลห้องพัก",
-            heading: "🏠 ระบบออกบิลห้องพัก (ไม่ต้องเข้าสู่ระบบ)",
+            pageTitle: "ระบบออกใบเสร็จและจัดการห้องเช่า สำหรับ SME",
+            heading: "🏠 ระบบออกใบเสร็จและจัดการห้องเช่า สำหรับ SME (ไม่ต้องเข้าสู่ระบบ)",
             backLink: "← กลับหน้าหลัก",
             langSwitch: "EN",
-            labelRoomName: "ชื่อห้องพัก / เลขห้อง:",
+            labelRoomName: "ชื่อห้องเช่า / เลขห้อง:",
             labelDate: "วันที่ออกใบเสร็จ:",
-            receiptTitle: "ใบเสร็จค่าเช่าห้องพัก",
+            receiptTitle: "ใบเสร็จค่าห้องเช่า",
             thItem: "รายการ",
             thPrev: "เลขครั้งก่อน",
             thCurr: "เลขครั้งนี้",
@@ -220,18 +231,18 @@
             rowInternet: "อินเทอร์เน็ต / อื่นๆ",
             rowDiscount: "ส่วนลด",
             grandTotalLabel: "รวมยอดเงินที่ต้องชำระทั้งสิ้น:",
-            accountLabel: "เลขที่บัญชี / พร้อมเพย์สำหรับโอนเงิน:",
+            accountLabel: "บัญชีธนาคาร / พร้อมเพย์สำหรับโอนเงิน:",
             signatureLabel: "ลายเซ็นต์: ___________________________________",
             recipientLabel: "( ผู้รับเงิน )",
             printBtn: "🖨️ พิมพ์ / บันทึกเป็นไฟล์ PDF",
             datePlaceholder: "วว/ดด/ปปปป"
         },
         en: {
-            pageTitle: "Room Rental Receipt System",
-            heading: "🏠 Room Rental Receipt System (No Login Required)",
+            pageTitle: "Receipt & Rental Room Management System for SME",
+            heading: "🏠 Receipt & Rental Room Management System for SME (No Login Required)",
             backLink: "← Back to Main System",
             langSwitch: "ไทย",
-            labelRoomName: "Property / Room Name:",
+            labelRoomName: "Room Name / Room Number:",
             labelDate: "Receipt Date:",
             receiptTitle: "Room Rental Receipt",
             thItem: "Item",
@@ -246,7 +257,7 @@
             rowInternet: "Internet / Others",
             rowDiscount: "Discount",
             grandTotalLabel: "Total Amount Due:",
-            accountLabel: "Account No. / PromptPay for Transfer:",
+            accountLabel: "Bank Account / PromptPay for Transfer:",
             signatureLabel: "Signature: ___________________________________",
             recipientLabel: "( Recipient )",
             printBtn: "🖨️ Print / Save as PDF",

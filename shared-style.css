@@ -200,6 +200,8 @@ input:focus, select:focus {
     .container {
         max-width: 100%;
     }
+    /* ซ่อน tab-btn-dashboard ตอนปริ้น */
+    .tab-btn-dashboard { display: none !important; }
     .tab-content-like, .tab-content {
         box-shadow: none;
         padding: 0;
