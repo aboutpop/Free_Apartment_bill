@@ -288,32 +288,34 @@
             <h1 data-i18n="heading">🏠 ฟรี! ระบบออกใบเสร็จห้องเช่า คำนวณค่าน้ำ-ค่าไฟ อัตโนมัติ</h1>
             <p data-i18n="subHeading">ไม่ต้องติดตั้ง · ไม่ต้องสมัครสมาชิก · พิมพ์ใบเสร็จสวยงามได้ทันที</p>
             <div class="hero-badges">
-                <span class="badge">✅ ฟรี 100%</span>
-                <span class="badge">🚫 ไม่มีโฆษณา</span>
-                <span class="badge">🖨️ พิมพ์ / PDF ได้</span>
-                <span class="badge">🌐 TH / EN</span>
+                <!-- ✅ เพิ่ม data-i18n ให้ทุก badge -->
+                <span class="badge" data-i18n="badge1">✅ ฟรี 100%</span>
+                <span class="badge" data-i18n="badge2">🚫 ไม่มีโฆษณา</span>
+                <span class="badge" data-i18n="badge3">🖨️ พิมพ์ / PDF ได้</span>
+                <span class="badge" data-i18n="badge4">🌐 TH / EN</span>
             </div>
         </div>
         <div class="hero-icon" aria-hidden="true">🧾</div>
     </div>
 
     <!-- ===== Step Guide ===== -->
+    <!-- ✅ เพิ่ม data-i18n ให้ทุก step -->
     <div class="step-guide" aria-label="วิธีใช้งาน">
         <div class="step-item">
             <div class="step-num">1</div>
-            <p>กรอกชื่อผู้เช่า<br>และวันที่</p>
+            <p data-i18n="step1">กรอกชื่อผู้เช่า<br>และวันที่</p>
         </div>
         <div class="step-item">
             <div class="step-num">2</div>
-            <p>ใส่เลขมิเตอร์<br>น้ำ & ไฟ</p>
+            <p data-i18n="step2">ใส่เลขมิเตอร์<br>น้ำ & ไฟ</p>
         </div>
         <div class="step-item">
             <div class="step-num">3</div>
-            <p>ระบบคำนวณ<br>ให้อัตโนมัติ</p>
+            <p data-i18n="step3">ระบบคำนวณ<br>ให้อัตโนมัติ</p>
         </div>
         <div class="step-item">
             <div class="step-num">4</div>
-            <p>กดพิมพ์ หรือ<br>บันทึกเป็น PDF</p>
+            <p data-i18n="step4">กดพิมพ์ หรือ<br>บันทึกเป็น PDF</p>
         </div>
     </div>
 
@@ -329,15 +331,11 @@
     <div class="tab-content-like">
         <div class="invoice-box" id="printArea">
             <div class="invoice-header">
-
-                <!-- ✅ แก้ไขจุดที่ 1: "ใบเสร็จค่าเช่าห้อง" -->
                 <div class="invoice-title" data-i18n="receiptTitle">ใบเสร็จค่าเช่าห้อง</div>
 
                 <div class="meta-grid">
                     <div class="meta-item">
-                        <!-- ✅ แก้ไขจุดที่ 2: "ชื่อผู้เช่า / เลขห้อง:" -->
                         <label data-i18n="labelRoomName">ชื่อผู้เช่า / เลขห้อง:</label>
-                        <!-- ✅ แก้ไขจุดที่ 3: placeholder แทน value -->
                         <input type="text" id="roomName" class="print-borderless"
                                placeholder="หมายเลขห้อง / ผู้เช่า">
                     </div>
@@ -404,7 +402,9 @@
             <div class="invoice-footer">
                 <div class="account-row">
                     <label data-i18n="accountLabel">บัญชีธนาคาร / พร้อมเพย์สำหรับโอนเงิน:</label>
-                    <input type="text" id="accountNo" class="print-borderless" value="0000000">
+                    <!-- ✅ เพิ่ม id เพื่อให้ JS เปลี่ยน placeholder ได้ -->
+                    <input type="text" id="accountNo" class="print-borderless"
+                           placeholder="เลขบัญชี / เบอร์พร้อมเพย์" value="0000000">
                 </div>
                 <div class="signature-area">
                     <p data-i18n="signatureLabel">ลายเซ็นต์: ___________________________________</p>
@@ -434,9 +434,20 @@
             subHeading:      "ไม่ต้องติดตั้ง · ไม่ต้องสมัครสมาชิก · พิมพ์ใบเสร็จสวยงามได้ทันที",
             backLink:        "← กลับหน้าหลัก",
             langSwitch:      "EN",
-            // ✅ แก้ไขจุดที่ 1
+
+            /* ✅ Hero Badges */
+            badge1:          "✅ ฟรี 100%",
+            badge2:          "🚫 ไม่มีโฆษณา",
+            badge3:          "🖨️ พิมพ์ / PDF ได้",
+            badge4:          "🌐 TH / EN",
+
+            /* ✅ Step Guide */
+            step1:           "กรอกชื่อผู้เช่า\nและวันที่",
+            step2:           "ใส่เลขมิเตอร์\nน้ำ & ไฟ",
+            step3:           "ระบบคำนวณ\nให้อัตโนมัติ",
+            step4:           "กดพิมพ์ หรือ\nบันทึกเป็น PDF",
+
             receiptTitle:    "ใบเสร็จค่าเช่าห้อง",
-            // ✅ แก้ไขจุดที่ 2
             labelRoomName:   "ชื่อผู้เช่า / เลขห้อง:",
             labelDate:       "วันที่ออกใบเสร็จ:",
             thItem:          "รายการ",
@@ -456,7 +467,9 @@
             recipientLabel:  "( ผู้รับเงิน )",
             printBtn:        "🖨️ พิมพ์ / บันทึกเป็นไฟล์ PDF",
             printHint:       "💡 กด \"บันทึกเป็น PDF\" ในหน้าต่างพิมพ์ เพื่อเก็บไฟล์ไว้ใช้ภายหลัง",
-            datePlaceholder: "วว/ดด/ปปปป"
+            datePlaceholder: "วว/ดด/ปปปป",
+            roomPlaceholder: "หมายเลขห้อง / ผู้เช่า",
+            accountPlaceholder: "เลขบัญชี / เบอร์พร้อมเพย์"
         },
         en: {
             pageTitle:       "Free! Online Apartment Receipt Generator – Auto Water & Electric Bill Calculator",
@@ -464,9 +477,20 @@
             subHeading:      "No installation · No sign-up required · Print or save as PDF instantly",
             backLink:        "← Back to Main System",
             langSwitch:      "ไทย",
-            // ✅ แก้ไขจุดที่ 1 (EN)
+
+            /* ✅ Hero Badges */
+            badge1:          "✅ 100% Free",
+            badge2:          "🚫 No Ads",
+            badge3:          "🖨️ Print / PDF",
+            badge4:          "🌐 TH / EN",
+
+            /* ✅ Step Guide */
+            step1:           "Enter tenant name\n& date",
+            step2:           "Enter meter readings\nwater & electric",
+            step3:           "System calculates\nautomatically",
+            step4:           "Print or\nsave as PDF",
+
             receiptTitle:    "Room Rental Receipt",
-            // ✅ แก้ไขจุดที่ 2 (EN)
             labelRoomName:   "Tenant Name / Room No.:",
             labelDate:       "Receipt Date:",
             thItem:          "Item",
@@ -486,58 +510,69 @@
             recipientLabel:  "( Recipient )",
             printBtn:        "🖨️ Print / Save as PDF",
             printHint:       "💡 Choose \"Save as PDF\" in the print dialog to keep a copy.",
-            datePlaceholder: "dd/mm/yyyy"
+            datePlaceholder: "dd/mm/yyyy",
+            roomPlaceholder: "Room No. / Tenant Name",
+            accountPlaceholder: "Account No. / PromptPay Number"
         }
     };
 
     function applyLanguage(lang) {
         document.documentElement.lang = lang;
         document.title = translations[lang].pageTitle;
+
+        /* ── แปลทุก element ที่มี data-i18n ── */
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if (translations[lang][key] !== undefined) {
-                el.innerText = translations[lang][key];
+            if (translations[lang][key]) {
+                el.innerHTML = translations[lang][key];
             }
         });
+
+        // อัปเดตข้อความปุ่มสลับภาษา
         document.getElementById('langToggleBtn').innerText = translations[lang].langSwitch;
 
-        // ✅ แก้ไขจุดที่ 3: เปลี่ยน placeholder ตามภาษา
-        const roomInput = document.getElementById('roomName');
-        roomInput.placeholder = lang === 'en'
-            ? 'Room No. / Tenant Name'
-            : 'หมายเลขห้อง / ผู้เช่า';
+        // อัปเดต Placeholder ของ input
+        document.getElementById('roomName').placeholder = translations[lang].roomPlaceholder;
+        document.getElementById('accountNo').placeholder = translations[lang].accountPlaceholder;
 
-        updateDateDisplay(document.getElementById('billingDate'), lang);
+        // อัปเดต Placeholder ของ Datepicker
+        document.getElementById('billingDate').setAttribute('data-placeholder', translations[lang].datePlaceholder);
     }
 
     function toggleLanguage() {
-        const current = document.documentElement.lang === 'en' ? 'en' : 'th';
-        const next    = current === 'th' ? 'en' : 'th';
+        const current = document.documentElement.lang;
+        const next = current === 'th' ? 'en' : 'th';
         localStorage.setItem('siteLang', next);
         applyLanguage(next);
     }
 
-    function updateDateDisplay(input, lang) {
-        const currentLang = lang || (document.documentElement.lang === 'en' ? 'en' : 'th');
+    function updateDateDisplay(input) {
+        // ฟังก์ชันนี้ช่วยให้ input date แสดงผล placeholder ตามภาษา
         if (input.value) {
-            const [y, m, d] = input.value.split('-');
-            input.setAttribute('data-placeholder', `${d}/${m}/${y}`);
+            input.removeAttribute('data-placeholder');
         } else {
-            input.setAttribute('data-placeholder', translations[currentLang].datePlaceholder);
+            const lang = document.documentElement.lang;
+            input.setAttribute('data-placeholder', translations[lang].datePlaceholder);
         }
     }
 
     window.onload = function () {
-        const today     = new Date();
-        const yyyy      = today.getFullYear();
-        const mm        = String(today.getMonth() + 1).padStart(2, '0');
-        const dd        = String(today.getDate()).padStart(2, '0');
+        // ตั้งค่าวันที่ปัจจุบันใน input
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
         const dateInput = document.getElementById('billingDate');
         dateInput.value = `${yyyy}-${mm}-${dd}`;
 
+        // ดึงภาษาที่บันทึกไว้ หรือใช้ค่าเริ่มต้นเป็น 'th'
         const savedLang = localStorage.getItem('siteLang') || 'th';
         applyLanguage(savedLang);
-        calculateInvoice();
+
+        // คำนวณค่าเริ่มต้น
+        if (typeof calculateInvoice === 'function') {
+            calculateInvoice();
+        }
     };
 </script>
 </body>
