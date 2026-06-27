@@ -365,21 +365,21 @@
                 <pre><span class="comment">-- ตารางเก็บประวัติใบเสร็จทั้งหมด</span>
 <span class="keyword">CREATE TABLE</span> <span class="type">room_records</span> (
     id            <span class="type">bigint</span>        <span class="keyword">GENERATED ALWAYS AS IDENTITY PRIMARY KEY</span>,
-    timestamp     <span class="type">timestamptz</span>   <span class="keyword">DEFAULT</span> <span class="value">now()</span>,
+    timestamp     <span class="type">timestamptz</span>   <span class="keyword">NOT NULL DEFAULT</span> <span class="value">timezone('utc', now())</span>,
     month         <span class="type">text</span>,
     room          <span class="type">text</span>,
-    rent          <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    water_before  <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    water_after   <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    water_unit    <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    water_total   <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    elec_before   <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    elec_after    <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    elec_unit     <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    elec_total    <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    internet      <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    discount      <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    grand_total   <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>
+    rent          <span class="type">numeric</span>,
+    water_before  <span class="type">real</span>          <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    water_after   <span class="type">numeric</span>,
+    water_unit    <span class="type">numeric</span>,
+    water_total   <span class="type">numeric</span>,
+    elec_before   <span class="type">real</span>          <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    elec_after    <span class="type">numeric</span>,
+    elec_unit     <span class="type">numeric</span>,
+    elec_total    <span class="type">numeric</span>,
+    internet      <span class="type">numeric</span>,
+    discount      <span class="type">numeric</span>,
+    grand_total   <span class="type">numeric</span>
 );</pre>
             </div>
 
@@ -389,17 +389,18 @@
                 <pre><span class="comment">-- ตารางเก็บข้อมูลห้องและผู้เช่าปัจจุบัน</span>
 <span class="keyword">CREATE TABLE</span> <span class="type">rooms_data</span> (
     id            <span class="type">bigint</span>        <span class="keyword">GENERATED ALWAYS AS IDENTITY PRIMARY KEY</span>,
-    room_number   <span class="type">text</span>          <span class="keyword">NOT NULL</span>,
+    room_number   <span class="type">text</span>          <span class="keyword">NOT NULL UNIQUE</span>,
     tenant_name   <span class="type">text</span>,
     phone         <span class="type">text</span>,
-    deposit       <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    base_rent     <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    fine          <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    deposit       <span class="type">real</span>          <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    base_rent     <span class="type">real</span>          <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    fine          <span class="type">real</span>          <span class="keyword">DEFAULT</span> <span class="value">0</span>,
     paid_status   <span class="type">boolean</span>       <span class="keyword">DEFAULT</span> <span class="value">false</span>,
-    last_total    <span class="type">float4</span>,
+    last_total    <span class="type">real</span>,
     last_month    <span class="type">text</span>,
-    last_water    <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>,
-    last_elec     <span class="type">float4</span>        <span class="keyword">DEFAULT</span> <span class="value">0</span>
+    last_water    <span class="type">real</span>          <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    last_elec     <span class="type">real</span>          <span class="keyword">DEFAULT</span> <span class="value">0</span>,
+    meter_edited  <span class="type">boolean</span>       <span class="keyword">DEFAULT</span> <span class="value">false</span>
 );</pre>
             </div>
 
@@ -544,7 +545,6 @@
                     <tr><td>📡 การเชื่อมต่อ Supabase</td><td>URL และ Key ถูกต้องไหม</td><td>กลับไปทำขั้นตอนที่ 6 ใหม่</td></tr>
                     <tr><td>📋 ตาราง room_records</td><td>มีตารางนี้ในฐานข้อมูลไหม</td><td>รัน SQL ส่วนที่ 1 ในขั้นตอนที่ 3</td></tr>
                     <tr><td>🏠 ตาราง rooms_data</td><td>มีตารางนี้ในฐานข้อมูลไหม</td><td>รัน SQL ส่วนที่ 2 ในขั้นตอนที่ 3</td></tr>
-                    <tr><td>🔒 Row Level Security</td><td>RLS เปิดใช้งานแล้วไหม</td><td>รัน SQL ในขั้นตอนที่ 4</td></tr>
                     <tr><td>👤 บัญชีผู้ใช้</td><td>Email/Password ใช้ Login ได้ไหม</td><td>กลับไปสร้าง User ในขั้นตอนที่ 5</td></tr>
                     <tr><td>🔐 สิทธิ์การเข้าถึง</td><td>หลัง Login แล้วอ่าน/เขียนข้อมูลได้ไหม</td><td>ตรวจสอบ Policy ในขั้นตอนที่ 4</td></tr>
                 </tbody>
@@ -703,7 +703,6 @@
             { id: 'conn',   name: '📡 การเชื่อมต่อ Supabase',   desc: 'ตรวจสอบ URL และ Anon Key' },
             { id: 'table1', name: '📋 ตาราง room_records',       desc: 'ตรวจสอบว่ามีตารางนี้ในฐานข้อมูล' },
             { id: 'table2', name: '🏠 ตาราง rooms_data',         desc: 'ตรวจสอบว่ามีตารางนี้ในฐานข้อมูล' },
-            { id: 'rls',    name: '🔒 Row Level Security',       desc: 'ตรวจสอบว่าเปิด RLS แล้ว' },
             { id: 'auth',   name: '👤 บัญชีผู้ใช้',              desc: 'ตรวจสอบ Email/Password' },
             { id: 'access', name: '🔐 สิทธิ์การเข้าถึงข้อมูล',  desc: 'ตรวจสอบการอ่าน/เขียนหลัง Login' }
         ];
@@ -763,20 +762,7 @@
                 }
             } catch (e) { updateCheck('table2', 'error', 'ตรวจสอบไม่ได้: ' + e.message); }
 
-            // 4. ตรวจสอบ RLS
-            try {
-                const anonSb = window.supabase.createClient(url, key);
-                const { error: rlsErr } = await anonSb.from('room_records').select('id').limit(1);
-                if (rlsErr && (rlsErr.code === 'PGRST301' || (rlsErr.message && rlsErr.message.includes('policy')) || rlsErr.status === 401)) {
-                    updateCheck('rls', 'success', 'RLS เปิดใช้งาน — ข้อมูลปลอดภัย');
-                } else if (!rlsErr) {
-                    updateCheck('rls', 'error', '⚠️ RLS อาจปิดอยู่ — ข้อมูลอาจเป็น Public! กรุณารัน SQL ในขั้นตอนที่ 4');
-                } else {
-                    updateCheck('rls', 'success', 'RLS เปิดใช้งาน');
-                }
-            } catch (e) { updateCheck('rls', 'error', 'ตรวจสอบไม่ได้: ' + e.message); }
-
-            // 5. ตรวจสอบ Login
+            // 4. ตรวจสอบ Login
             let session = null;
             try {
                 const { data, error: authErr } = await sb.auth.signInWithPassword({ email, password });
@@ -815,7 +801,7 @@
 
         } catch (e) {
             if (e.message === 'CONNECTION_FAILED') {
-                ['table1', 'table2', 'rls', 'auth', 'access'].forEach(id => {
+                ['table1', 'table2', 'auth', 'access'].forEach(id => {
                     const el = document.getElementById('check-' + id);
                     if (el && el.classList.contains('checking')) {
                         el.classList.remove('checking'); el.classList.add('error');
